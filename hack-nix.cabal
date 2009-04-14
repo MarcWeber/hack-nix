@@ -1,0 +1,22 @@
+Name:            hack-nix
+category:
+version:         0.0.0.0
+synopsis:        hackage to nix software distribution systrem
+build-depends:     haskell98
+                 , base
+                 , GetOptions
+                 , directory
+                , containers
+                , HTTP-Simple
+                , network
+                , zlib, tar
+                , bytestring
+                , filepath
+                , Cabal >= 1.5.1
+                , process
+                , mtl
+                , hslogger
+
+executable:     hack-nix
+main-is:        Main.hs
+hs-source-dirs: src
