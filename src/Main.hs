@@ -11,7 +11,6 @@ import Control.Monad.Trans
 import System.Exit
 import GetOptions
 import System.Directory
-import Network.HTTP.Simple
 import System.Environment
 import Network.URI
 
