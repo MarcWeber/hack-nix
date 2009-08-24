@@ -3,7 +3,7 @@ import Data.Vorsion
 
 -- a (cabal) package whose deps are to be resolved before writing it to disk.. 
 
-data Source = Url { 
+ata Source = Url { 
               url :: String -- download (fetchurl) 
             , relPath :: Maybe String
             }

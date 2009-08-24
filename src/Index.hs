@@ -1,49 +1,81 @@
--- copied from hackport
+{-# OPTIONS_GHC -XViewPatterns #-}
 module Index where
-
+import Data.Version
+import Data.Maybe
+import Data.List (isPrefixOf, nub)
 import qualified Data.Set as Set
 import qualified Data.Map as Map
 import Data.Version (Version,parseVersion)
 import Codec.Compression.GZip(decompress)
-import Data.ByteString.Lazy.Char8(ByteString,unpack)
-import Codec.Archive.Tar
+import qualified Data.ByteString.Lazy.Char8 as BL
+import Codec.Archive.Tar as Tar
 import Distribution.PackageDescription
+import Distribution.Package as D
+import Distribution.Text
 import Distribution.Package
 import System.FilePath.Posix
 import Distribution.PackageDescription.Parse
 import MaybeRead (readPMaybe)
 
-type Index = [(String,String,GenericPackageDescription)]
+type PreferredVersion = String -- TODO
+data Index = Index {
+    preferredVersions :: Map.Map PackageName [Dependency]
+    , packages :: [ GenericPackageDescription ]
+    , warnings :: [ String ]
+  }
+
+data IncludeReason = Target | Dependency
+
+data PreparedPackage = PreparedPackage {
+        preferred :: Bool,
+        includeReason :: IncludeReason,
+        pkg :: GenericPackageDescription
+      }
+
+
+-- parsePreferredVersions taken from cabal-install 
+parsePreferredVersions :: String -> [Dependency]
+parsePreferredVersions = catMaybes
+                       . map simpleParse
+                       . filter (not . isPrefixOf "--")
+                       . lines
+
+instance Show Index where
+  show (Index pv p ws) = unlines $ "Index:" : "preferred versions" : map display ((concat . Map.elems) pv) ++ ["packages"] ++ map show p ++ [ "warnings:" ] ++ ws
+emptyIndex = Index Map.empty [] []
+
 type IndexMap = Map.Map String (Set.Set Version)
 
-readIndex :: ByteString -> Index
-readIndex str = do
-    let unziped = decompress str
-        untared = readTarArchive unziped
-    entr <- archiveEntries untared
-    case splitDirectories (tarFileName (entryHeader entr)) of
-        [".",pkgname,vers,file] -> do
-            let descr = case parsePackageDescription (unpack (entryData entr)) of
-                    ParseOk _ pkg_desc -> pkg_desc
-                    _  -> error $ "Couldn't read cabal file "++show file
-            return (pkgname,vers,descr)
-        _ -> fail "doesn't look like the proper path"
-
-filterIndexByPV :: (String -> String -> Bool) -> Index -> Index
-filterIndexByPV cond index = [ x | x@(p,v,d) <- index, cond p v]
-
-indexMapFromList = undefined
-indexToPackageIdentifier = undefined
--- indexMapFromList :: [PackageIdentifier] -> IndexMap
--- indexMapFromList pids = Map.unionsWith Set.union $
---     [ Map.singleton name (Set.singleton vers)
---     | (PackageIdentifier {pkgName = name,pkgVersion = vers}) <- pids ]
-
--- indexToPackageIdentifier :: Index -> [PackageIdentifier]
--- indexToPackageIdentifier index = do
---     (name,vers_str,_) <- index
---     Just vers <- return $ readPMaybe parseVersion vers_str
---     return $ PackageIdentifier {pkgName = name,pkgVersion = vers}
-
-bestVersions :: IndexMap -> Map.Map String Version
-bestVersions = Map.map Set.findMax
+readIndex :: BL.ByteString -> Index
+readIndex = filterFaulty . foldEntries fold emptyIndex undefined . Tar.read . decompress
+  where 
+    filterFaulty index = index { packages = filterPackages (packages index) }
+    filterPackages pkgs =
+      -- there is no source package availible for those: 
+      let faulty = [ ("hsdns", [0,0] )
+                    ,("hopenssl", [0,0])
+                    ,("child", [0,0])
+                    ,("blockio", [0,0])
+                    ,("monadenv", [0,0])
+                    ,("hsgnutls", [0,2,3,1])
+                    ,("hsgnutls", [0,2,3])
+                   ]
+      in filter (\gP -> let pkg = (package . packageDescription) gP
+                            (PackageName n) = pkgName pkg
+                        in not $ elem (n, (versionBranch . pkgVersion) pkg ) faulty)  pkgs
+    tarError = error . ("error reading tar " ++)
+    fold entry index =
+      let path = entryPath entry
+          cont (NormalFile bs _) = bs
+          cont _ = error $ "NormalFile tar content expected at " ++ path
+          asString = BL.unpack $ cont $ entryContent entry
+          toTuple d@(D.Dependency a _) = (a, [d])
+      in case splitDirectories path of
+        [ "preferred-versions" ] ->
+            index { preferredVersions = Map.fromListWith (\ a b -> nub (a ++ b)) $ map toTuple $ parsePreferredVersions asString }
+        [ ".", name, version, _ ] ->
+            case parsePackageDescription asString of
+                ParseOk ws a -> index { packages = a:(packages index)
+                                      , warnings = warnings index ++ path:(map show ws)  }
+                ParseFailed error -> index { warnings = warnings index ++ [ path ++ " !! parsing failed, reason: " ++ show error] }
+        path -> error $ "unkown index path ? " ++ (show path)

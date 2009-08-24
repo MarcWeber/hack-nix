@@ -1,9 +1,17 @@
 module Main where
+import Control.Monad.Reader.Class
+import Data.Function
+import Text.PrettyPrint
 import qualified Data.Map as M
 import qualified Data.ByteString.Lazy as B
+import qualified Data.ByteString.Lazy.Char8 as BL
+import Distribution.Package
+import Distribution.PackageDescription
 import Config
 import Control.Exception
 import Nix
+import NixLangUtil
+import NixLanguage
 import Index
 import Data.Maybe
 import Control.Monad
@@ -13,6 +21,8 @@ import GetOptions
 import System.Directory
 import System.Environment
 import Network.URI
+import Data.List
+import Utils
 
 
 -- writeConfig Map file = writeFile file $ lines $ mapWithKey
@@ -28,16 +38,56 @@ help = unlines [
   , "to update the hackage index simply remove 00-index.tar (current dir)"
   ]
 
+-- determine list of packages to be installed based on TargetPackages setting
+filterTargetPackages :: M.Map PackageName [Dependency] -> [GenericPackageDescription] -> ConfigR [GenericPackageDescription]
+filterTargetPackages preferred packages = do
+  tp <- asks targetPackages
+  let 
+      sortByVersion :: [GenericPackageDescription] -> [GenericPackageDescription]
+      sortByVersion = sortBy ( (flip compare) `on` (pkgVersion . package . packageDescription) )
+      byName :: M.Map PackageName [GenericPackageDescription]      
+      byName = M.map sortByVersion $ M.fromListWith (++) [ let name = (pkgName . package . packageDescription) p in (name, [p]) | p <- packages ]
+  -- after grouping all packages by name only keep wanted packages
+  return $ concatMap (filterByName tp) $ M.toList byName
+  where
+    -- match packages which has been selected by the user explicitly 
+    elected :: [Dependency] -> [ GenericPackageDescription ] -> [GenericPackageDescription]
+    elected deps pkgs = concat [ filter (matchDepndencyConstraints d . package . packageDescription ) pkgs | d <- deps ]
+
+    filterByName :: TargetPackages Dependency -> (PackageName, [GenericPackageDescription]) -> [GenericPackageDescription]
+    filterByName tp (pn@(PackageName name), ps) = case tp of
+      TPAll -> ps
+      TPMostRecentPreferred deps -> nub $ head ps : elected deps ps ++ elected (fromMaybe [] (M.lookup pn preferred)) ps
+      TPCustom deps -> nub $ elected deps ps
+
 run :: String -> IO ()
 run cfg =  do
   cfg <- liftM parseConfig $ readFile cfg
   withConfig cfg $ do
-    (liftIO . print) =<< unpack =<< downloadCached (ghc cfg)
-    case ghcExtraLibs cfg of
-      Nothing -> return ()
-      Just p -> (liftIO . print) =<< unpack =<< downloadCached p
+    (hackageIndex, _) <- liftIO $ downloadCached (hackageIndex cfg) False
+    liftIO $ putStrLn $ "hackage index is " ++ hackageIndex
+    indexContents <- liftIO $ liftM readIndex $ BL.readFile hackageIndex
+    -- let (pkgs :: [ GenericPackageDescription ]) = packages indexContents
+    targetPackages <- filterTargetPackages (preferredVersions indexContents ) $ packages indexContents
+    
+    -- liftIO $ print indexContents
+    attrs <- liftIO $ mapM (\(nr,b) -> do
+                let (PackageName name) = pkgName $ package $ packageDescription $ b
+                putStrLn $ "checking source of " ++ name  ++ "  " ++ show nr ++ "/" ++ (show . length . packages) indexContents
+                packageDescriptionToNix b) $ zip [1 ..] $ targetPackages
+    let result = unlines $ "["
+                           : (map (renderStyle style . toDoc) attrs)
+                           ++ ["]"]
 
-main = do
+    liftIO $ do
+      -- STDOUT 
+      putStrLn result
+      case targetFile cfg of 
+        Just f -> writeFile f result
+        Nothing -> return ()
+
+main = (flip finally) saveNixCache $ do
+  loadNixCache
   args <- getArgs
   case args of
     ["--write-config"] -> writeSampleConfig defaultConfigPath
