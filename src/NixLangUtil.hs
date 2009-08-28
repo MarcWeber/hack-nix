@@ -10,7 +10,7 @@ import Distribution.System
 import qualified Data.Map as M
 import Data.Version
 import Data.List (intercalate)
-import Data.Maybe (maybeToList)
+import Data.Maybe (maybeToList,fromMaybe)
 
 {-
 instance TypeToNix Flag where
@@ -119,7 +119,7 @@ instance ( TypeToNix v, TypeToNix c, TypeToNix a
   toNix (CondNode d c components) = NixAttrs [] $ M.fromList $ [
       -- ("data", toNix d) this only contains stuff such as "exposed modules.." we're not interested in
         ("deps", toNix c) -- deps = constraints. That's shorter 
-      , ("tms", toNix components) -- (i)tms That's shorter 
+      , ("cdeps", toNix components) -- (i) cdeps = "conditional deps" - this is shorter 
     ]
 
 -- returns
@@ -170,9 +170,8 @@ packageDescriptionToNix (GenericPackageDescription packageDescription genPackage
       , ("flags", NixAttrs [] $ M.fromList $
                     [ (toNixLabel flagName, toNix flagDefault)         
                     | (MkFlag (FlagName flagName) flagDescription flagDefault flagManual) <- genPackageFlags' ])
-      , ("deps",
-            let depExs = map (toNix . snd) condExecutables'
-                depLib = maybeToList $ fmap toNix condLibrary' 
-            in NixList (depLib ++ depExs)
-        )
-    ]
+      ]
+      -- dependencies of library
+      ++ (fromMaybe [] (fmap (\x -> [("ldeps", toNix x)]) condLibrary'))
+      -- dependencies of executables
+      ++ [("edeps", (toNix . map snd) condExecutables')]

@@ -67,6 +67,7 @@ run cfg =  do
     (hackageIndex, _) <- liftIO $ downloadCached (hackageIndex cfg) False
     liftIO $ putStrLn $ "hackage index is " ++ hackageIndex
     indexContents <- liftIO $ liftM readIndex $ BL.readFile hackageIndex
+    -- liftIO $ writeFile "all" (show (packages indexContents))
     -- let (pkgs :: [ GenericPackageDescription ]) = packages indexContents
     targetPackages <- filterTargetPackages (preferredVersions indexContents ) $ packages indexContents
     
