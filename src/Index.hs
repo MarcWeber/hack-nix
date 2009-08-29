@@ -9,13 +9,15 @@ import Data.Version (Version,parseVersion)
 import Codec.Compression.GZip(decompress)
 import qualified Data.ByteString.Lazy.Char8 as BL
 import Codec.Archive.Tar as Tar
-import Distribution.PackageDescription
+import Distribution.PackageDescription as PD
 import Distribution.Package as D
 import Distribution.Text
 import Distribution.Package
 import System.FilePath.Posix
 import Distribution.PackageDescription.Parse
 import MaybeRead (readPMaybe)
+import Distribution.ParseUtils as PU
+import Control.Monad (when)
 
 type PreferredVersion = String -- TODO
 data Index = Index {
@@ -46,6 +48,22 @@ emptyIndex = Index Map.empty [] []
 
 type IndexMap = Map.Map String (Set.Set Version)
 
+parseResultToEither :: PU.ParseResult a -> Either String ([String],a)
+parseResultToEither (PU.ParseOk warnings a) = Right (map show warnings, a)
+parseResultToEither (PU.ParseFailed error) = Left (show error)
+
+parsePkgDescToEither :: String -> Either String ([String], GenericPackageDescription)
+parsePkgDescToEither = parseResultToEither . parsePackageDescription
+
+parsePkgFormFile :: FilePath -> IO GenericPackageDescription
+parsePkgFormFile file = do
+  c <- readFile file
+  case parsePkgDescToEither c of
+    Left e -> error $ unlines [ "parsing of " ++ file ++ "failed :", e]
+    Right (ws, pd) -> do
+      when ((not . null) ws) $ putStrLn $ unlines $ [ "warnings while parsing " ++ file ++ ":"] ++ ws
+      return pd
+
 readIndex :: BL.ByteString -> Index
 readIndex = filterFaulty . foldEntries fold emptyIndex undefined . Tar.read . decompress
   where 
@@ -74,8 +92,8 @@ readIndex = filterFaulty . foldEntries fold emptyIndex undefined . Tar.read . de
         [ "preferred-versions" ] ->
             index { preferredVersions = Map.fromListWith (\ a b -> nub (a ++ b)) $ map toTuple $ parsePreferredVersions asString }
         [ ".", name, version, _ ] ->
-            case parsePackageDescription asString of
-                ParseOk ws a -> index { packages = a:(packages index)
-                                      , warnings = warnings index ++ path:(map show ws)  }
-                ParseFailed error -> index { warnings = warnings index ++ [ path ++ " !! parsing failed, reason: " ++ show error] }
+            case parsePkgDescToEither asString of
+                Right (ws, a) -> index { packages = a:(packages index)
+                                      , warnings = warnings index ++ path:ws }
+                Left error -> index { warnings = warnings index ++ [ path ++ " !! parsing failed, reason: " ++ error] }
         path -> error $ "unkown index path ? " ++ (show path)

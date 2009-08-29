@@ -1,0 +1,48 @@
+Name:            test
+category:        test
+synopsis:        simple but advanced cabal file to be used by hack-nix for testing only
+version:         0.0.1
+Cabal-Version:   >=1.2
+build-type:      Simple
+LICENSE: GPL
+
+Flag A
+  Default: False
+  Description: 
+      description of flag A
+Flag B
+  Default: False
+  Description: 
+      description of flag B
+Flag buildE1
+  Default: True
+  Description: 
+      description of flag B
+
+
+Library
+  build-depends:   haskell98
+                  , HaXml >= 1.19
+                  , filepath
+  exposed-modules: Test.ModuleA Test.ModuleB
+  other-modules:  Test.OtherModule
+  extensions: CPP
+  if flag(A)
+    dep-flag-A
+  else
+    dep-flag-no-A
+
+executable     testE1
+  main-is:        test-e1.hs
+  if !(flag(buildE1))
+    buildable: False
+  hs-source-dirs: test
+  build-depends:  base, exec1 > 2.0
+  if flag(B)
+    exec1-b-only
+
+executable     testE1
+  main-is:        test-e2.hs
+  hs-source-dirs: test
+  build-depends:  base, exec1 > 2.0
+  build-depends:  exec2-only

@@ -22,10 +22,12 @@ data Config = Config
   , allPackages :: FilePath
   , targetPackages :: TargetPackages Dependency
   , targetFile :: Maybe FilePath
+  , testCabals :: [ FilePath ]
   } deriving (Show)
 
 configErr value = error $ "missing configuration file value: " ++ value
-emptyConfig = Config (configErr "ghc tar file") Nothing (configErr "hackage index file") [] [] "" (TPMostRecentPreferred []) Nothing
+emptyConfig = Config (configErr "ghc tar file") Nothing (configErr "hackage index file")
+                     [] [] "" (TPMostRecentPreferred []) Nothing []
 
 defaultConfigContents = unlines
   [ "ghc http://haskell.org/ghc/dist/6.10.1/ghc-6.10.1-src.tar.bz2 # url or sourceByName name"
@@ -36,6 +38,7 @@ defaultConfigContents = unlines
   , "all-packages.nix /etc/nixos/nixpkgs/pkgs/top-level/all-packages.nix"
   , "target-packages TPMostRecentPreferred [\"Cabal == 1.4.0.0\"] # additional list of non recent packages to be added"
   , "target-file Just \"result\" # where to write the result to. Addition"
+  , "test-cabal-files [\"tests/test.cabal\"] # this will be added to the package db. used by test cases"
   ]
 
 writeSampleConfig = (flip writeFile) defaultConfigContents
@@ -55,6 +58,7 @@ parseConfig config =
           | isPrefixOf "patches-dir " l = cfg { patchesDir = [dropS (length "packges-dir") $ dropEOLComment l] ++ (patchesDir cfg) }
           | isPrefixOf "target-packages " l = cfg { targetPackages = parseTargetPackages $! read $! dropS (length "target-packages") $! dropEOLComment l }
           | isPrefixOf "target-file " l = cfg { targetFile = read $ dropS (length "target-file") $ dropEOLComment l }
+          | isPrefixOf "test-cabal-files " l = cfg { testCabals = read $ dropS (length "test-cabal-files") $ dropEOLComment l }
           | otherwise = error $ "can't parse config line " ++ l
 
         dropSpaces = dropWhile isSpace

@@ -66,23 +66,31 @@ run cfg =  do
   withConfig cfg $ do
     (hackageIndex, _) <- liftIO $ downloadCached (hackageIndex cfg) False
     liftIO $ putStrLn $ "hackage index is " ++ hackageIndex
+    parsedTestCabals <- liftIO $ mapM parsePkgFormFile $ testCabals cfg
     indexContents <- liftIO $ liftM readIndex $ BL.readFile hackageIndex
+
+    liftIO $ do
+      print "parsed test cabals"
+      print parsedTestCabals
+
+    let allPkgs = packages indexContents ++ parsedTestCabals
+
     -- liftIO $ writeFile "all" (show (packages indexContents))
     -- let (pkgs :: [ GenericPackageDescription ]) = packages indexContents
-    targetPackages <- filterTargetPackages (preferredVersions indexContents ) $ packages indexContents
+    targetPackages <- filterTargetPackages (preferredVersions indexContents ) $ allPkgs
     
     -- liftIO $ print indexContents
     attrs <- liftIO $ mapM (\(nr,b) -> do
                 let (PackageName name) = pkgName $ package $ packageDescription $ b
-                putStrLn $ "checking source of " ++ name  ++ "  " ++ show nr ++ "/" ++ (show . length . packages) indexContents
-                packageDescriptionToNix b) $ zip [1 ..] $ targetPackages
+                putStrLn $ "checking source of " ++ name  ++ "  " ++ show nr ++ "/" ++ (show . length ) allPkgs
+                packageDescriptionToNix parsedTestCabals b) $ zip [1 ..] $ targetPackages
     let result = unlines $ "["
                            : (map (renderStyle style . toDoc) attrs)
                            ++ ["]"]
 
     liftIO $ do
       -- STDOUT 
-      putStrLn result
+      -- putStrLn result
       case targetFile cfg of 
         Just f -> writeFile f result
         Nothing -> return ()

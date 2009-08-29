@@ -155,13 +155,15 @@ instance (TypeToNix a) => TypeToNix (Condition a) where
   toNix (CAnd c1 c2) = keyValue "and" $ toNix [ c1, c2 ]
 
 
-packageDescriptionToNix :: GenericPackageDescription -> IO NixType
-packageDescriptionToNix (GenericPackageDescription packageDescription genPackageFlags' condLibrary' condExecutables') = do
-  let PackageIdentifier (PackageName name) version = package packageDescription
+packageDescriptionToNix :: [GenericPackageDescription] -> GenericPackageDescription -> IO NixType
+packageDescriptionToNix noHash (GenericPackageDescription packageDescription' genPackageFlags' condLibrary' condExecutables') = do
+  let PackageIdentifier (PackageName name) version = package packageDescription'
   let versionNumbers = versionBranch version
   let versionStr = intercalate "." (map show versionNumbers)
   let url = "http://hackage.haskell.org/packages/archive/" ++ name ++ "/" ++ versionStr ++ "/" ++ name ++ "-" ++ versionStr ++ ".tar.gz"
-  (_, hash) <- downloadCached url False
+  (_, hash) <- if package packageDescription' `elem` (map (package . packageDescription) noHash)
+      then return $ (undefined, "no tar ball -> no hash")
+      else downloadCached url False
   return $ NixAttrs ["name", "version", "nixName"] $ M.fromList $ [
         ("name", NixString name)
       , ("nixName", NixString $ map (\c -> if c `elem` "-" then '_' else c) name)
