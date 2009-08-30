@@ -37,12 +37,12 @@ executable     testE1
   if !(flag(buildE1))
     buildable: False
   hs-source-dirs: test
-  build-depends:  base, exec1 > 2.0
+  build-depends:  base >= 2.0 , exec1 > 2.0
   if flag(B)
     exec1-b-only
 
-executable     testE1
+executable     testE2
   main-is:        test-e2.hs
   hs-source-dirs: test
-  build-depends:  base, exec1 > 2.0
-  build-depends:  exec2-only
+  build-depends:  base <= 2.0, exec1 > 2.0
+  build-depends:  exec2_only
