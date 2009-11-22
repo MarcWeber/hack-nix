@@ -23,11 +23,13 @@ data Config = Config
   , targetPackages :: TargetPackages Dependency
   , targetFile :: Maybe FilePath
   , testCabals :: [ FilePath ]
+  , patchDirectory :: FilePath
+  , workDirectory :: FilePath
   } deriving (Show)
 
 configErr value = error $ "missing configuration file value: " ++ value
 emptyConfig = Config (configErr "ghc tar file") Nothing (configErr "hackage index file")
-                     [] [] "" (TPMostRecentPreferred []) Nothing []
+                     [] [] "" (TPMostRecentPreferred []) Nothing [] "" ""
 
 defaultConfigContents = unlines
   [ "ghc http://haskell.org/ghc/dist/6.10.1/ghc-6.10.1-src.tar.bz2 # url or sourceByName name"
@@ -39,6 +41,8 @@ defaultConfigContents = unlines
   , "target-packages TPMostRecentPreferred [\"Cabal == 1.4.0.0\"] # additional list of non recent packages to be added"
   , "target-file Just \"result\" # where to write the result to. Addition"
   , "test-cabal-files [\"tests/test.cabal\"] # this will be added to the package db. used by test cases"
+  , "patch-directory \"path-to-nix-haskell-repo/patches\" # Path to nix-haskell-repo/patches"
+  , "work-directory \"path-to-nix-haskell-repo/workes\"   # source will be put into this directory so that you can write patches easily"
   ]
 
 writeSampleConfig = (flip writeFile) defaultConfigContents
@@ -59,6 +63,8 @@ parseConfig config =
           | isPrefixOf "target-packages " l = cfg { targetPackages = parseTargetPackages $! read $! dropS (length "target-packages") $! dropEOLComment l }
           | isPrefixOf "target-file " l = cfg { targetFile = read $ dropS (length "target-file") $ dropEOLComment l }
           | isPrefixOf "test-cabal-files " l = cfg { testCabals = read $ dropS (length "test-cabal-files") $ dropEOLComment l }
+          | isPrefixOf "patch-directory" l = cfg { patchDirectory = read $ dropS (length "patch-directory") $ dropEOLComment l }
+          | isPrefixOf "work-directory" l = cfg { workDirectory = read $ dropS (length "work-directory") $ dropEOLComment l }
           | otherwise = error $ "can't parse config line " ++ l
 
         dropSpaces = dropWhile isSpace

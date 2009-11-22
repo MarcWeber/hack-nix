@@ -24,25 +24,29 @@ Library
   build-depends:   haskell98
                   , HaXml >= 1.19
                   , filepath
+                  , base > 0.5
   exposed-modules: Test.ModuleA Test.ModuleB
   other-modules:  Test.OtherModule
   extensions: CPP
   if flag(A)
-    dep-flag-A
+    build-depends: depFlagA
   else
-    dep-flag-no-A
+    build-depends: depFlagNoA
 
 executable     testE1
   main-is:        test-e1.hs
   if !(flag(buildE1))
     buildable: False
   hs-source-dirs: test
-  build-depends:  base >= 2.0 , exec1 > 2.0
+  build-depends:  base > 2.0 , exec1 > 2.0
   if flag(B)
-    exec1-b-only
+    build-depends: exec1Bonly
 
 executable     testE2
   main-is:        test-e2.hs
   hs-source-dirs: test
-  build-depends:  base <= 2.0, exec1 > 2.0
-  build-depends:  exec2_only
+  build-depends:  base < 4.0, exec2 > 2.0
+
+
+4.0 > base > 2.0 , exec1 > 2.0, exec2 > 2.0
+

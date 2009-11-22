@@ -77,8 +77,10 @@ instance TypeToNix ConfVar where
       , ("versionRange", toNix versionRange)
     ]
 
+nixVersion numbers = NixString $ intercalate "." $ map show numbers
+
 instance TypeToNix Version where
-  toNix (Version numbers _) = toNix numbers
+  toNix (Version numbers _) = nixVersion numbers
 
 opVersion :: String -> NixType -> NixType
 opVersion op v = NixAttrs [] $ M.fromList [("op", NixString op), ("v", v)]
@@ -168,7 +170,7 @@ packageDescriptionToNix noHash (GenericPackageDescription packageDescription' ge
       else downloadCached url False
   return $ NixAttrs ["name", "version"] $ M.fromList $ [
         ("name", NixString name)
-      , ("version", toNix versionNumbers)
+      , ("version", nixVersion versionNumbers)
       , ("sha256", NixString hash)
       ]
       ++ (
