@@ -12,6 +12,8 @@ import Data.Version
 import Data.List (intercalate)
 import Data.Maybe (maybeToList,fromMaybe)
 
+--  about 5% size could be saved by looking up package names from a dictionary with int keys
+
 {-
 instance TypeToNix Flag where
   toNix (MkFlag (FlagName flagName) flagDescription flagDefault flagManual) = NixAttrs [] $ M.fromList [
@@ -162,17 +164,24 @@ packageDescriptionToNix noHash (GenericPackageDescription packageDescription' ge
   let versionStr = intercalate "." (map show versionNumbers)
   let url = "http://hackage.haskell.org/packages/archive/" ++ name ++ "/" ++ versionStr ++ "/" ++ name ++ "-" ++ versionStr ++ ".tar.gz"
   (_, hash) <- if package packageDescription' `elem` (map (package . packageDescription) noHash)
-      then return $ (undefined, "no tar ball -> no hash")
+      then return $ (undefined, "0000000000000000000000000000000000000000000000000000")
       else downloadCached url False
-  return $ NixAttrs ["name", "version", "nixName"] $ M.fromList $ [
+  return $ NixAttrs ["name", "version"] $ M.fromList $ [
         ("name", NixString name)
-      , ("nixName", NixString $ map (\c -> if c `elem` "-" then '_' else c) name)
       , ("version", toNix versionNumbers)
       , ("sha256", NixString hash)
-      , ("flags", NixAttrs [] $ M.fromList $
-                    [ (toNixLabel flagName, toNix flagDefault)         
-                    | (MkFlag (FlagName flagName) flagDescription flagDefault flagManual) <- genPackageFlags' ])
       ]
+      ++ (
+      -- 450 flags: False
+      -- 99  flags: True Okt 2009
+      -- thus only store True default values as list
+        let list = [ NixString flagName
+                   | (MkFlag (FlagName flagName) flagDescription flagDefault flagManual) <- genPackageFlags'
+                   , flagDefault -- is True
+                   ]
+        in if null list then []
+            else [ ("tflags", NixList list ) ]
+        )
       -- dependencies of library
       ++ (fromMaybe [] (fmap (\x -> [("ldeps", toNix x)]) condLibrary'))
       -- dependencies of executables
