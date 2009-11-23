@@ -66,7 +66,7 @@ run mbExpectedEC prog args mbWorkDir mbStdout = do
           exitWith (ExitFailure 1)
   
 
-unpackPackage, applyPatch, createPatch, patchWorkflow :: String -> ConfigR ()
+unpackPackage, applyPatch, createPatch:: String -> ConfigR ()
 
 unpackPackage fullName = do
   wd <- wd fullName
@@ -109,7 +109,8 @@ createPatch fullName = do
     run (Just 0) "sed" ["-i", "-e", "s@" ++ src ++ "@" ++ "a@g", pf ] Nothing Nothing
     run (Just 0) "sed" ["-i", "-e", "s@" ++ wd ++ "@" ++ "b@g", pf ] Nothing Nothing
 
-patchWorkflow fullName = do
+patchWorkflow :: String -> ConfigR () -> ConfigR ()
+patchWorkflow fullName recreateHackNixFile = do
   unpackPackage fullName
   applyPatch fullName
   wd <- wd fullName
@@ -119,10 +120,8 @@ patchWorkflow fullName = do
     run (Just 0) shell [] (Just wd) Nothing
   createPatch fullName
   pf <- patchFile fullName
-  liftIO $ do
-    putStrLn "commit ? y/[n]"
-    a <- getChar
-    when (a == 'y') $ do
-      run (Just 0) "git" ["reset"] (Just wd) Nothing
-      run (Just 0) "git" ["add", pf] (Just wd) Nothing
-      run (Just 0) "git" ["commit", "-c", "-m", "adding / updating patchfile for " ++ fullName] (Just wd) Nothing
+  a <- liftIO $ do
+    putStrLn "recrate hack-nix-db.nix file? y/[n]"
+    getChar
+  when (a == 'y') $
+    recreateHackNixFile

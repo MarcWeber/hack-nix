@@ -67,7 +67,7 @@ runWithConfig cfg args =  do
       [] -> updateHackageIndexFile
       ["--unpack", fullName] -> unpackPackage fullName
       ["--create-patch", fullName] -> createPatch fullName
-      ["--patch-workflow", fullName] -> patchWorkflow fullName
+      ["--patch-workflow", fullName] -> patchWorkflow fullName updateHackageIndexFile
       _ -> liftIO $ help >> exitWith (ExitFailure 1)
 
 
