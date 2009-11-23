@@ -107,7 +107,7 @@ readIndex patchDirectory = filterFaulty . foldEntries fold emptyIndex undefined 
                   createDirectoryIfMissing False tmpDir
                   let tmpFile = tmpDir </> name ++ ".cabal"
                   writeFile tmpFile cont
-                  run Nothing "patch" ["-p1","-i", pf] (Just tmpDir) Nothing
+                  run Nothing "patch" ["-p1", "--batch", "-i", pf] (Just tmpDir) Nothing
                   readFile' tmpFile
               else return cont
 
