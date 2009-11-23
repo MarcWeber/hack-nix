@@ -80,9 +80,9 @@ updateHackageIndexFile = do
     pd <- asks patchDirectory
     indexContents <- liftIO $ liftM (readIndex pd) $ BL.readFile hackageIndex
 
-    liftIO $ do
-      print "parsed test cabals"
-      print parsedTestCabals
+    -- liftIO $ do
+    --   print "parsed test cabals"
+    --   print parsedTestCabals
 
     let allPkgs = packages indexContents ++ parsedTestCabals
 
