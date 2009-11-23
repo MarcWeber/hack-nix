@@ -1,6 +1,6 @@
 Name:            hack-nix
 category:
-version:         0.0.0.0
+version:         0.1.0
 synopsis:        hackage to nix software distribution systrem
 build-depends:     haskell98
                  , base
