@@ -62,8 +62,7 @@ run mbExpectedEC prog args mbWorkDir mbStdout = do
     (Just expectedEC) -> 
       when (expectedEC /= got) $ do
           putStrLn $ "run: " ++ str
-          putStrLn $ "expected exit code: " ++ show expectedEC ++ " but got: " ++ show got
-          exitWith (ExitFailure 1)
+          die $ "expected exit code: " ++ show expectedEC ++ " but got: " ++ show got
   
 
 unpackPackage, applyPatch, createPatch:: String -> ConfigR ()

@@ -161,20 +161,28 @@ instance (TypeToNix a) => TypeToNix (Condition a) where
 hackageSrcUrl name versionStr =
   "http://hackage.haskell.org/packages/archive/" ++ name ++ "/" ++ versionStr ++ "/" ++ name ++ "-" ++ versionStr ++ ".tar.gz"
 
-packageDescriptionToNix :: [GenericPackageDescription] -> GenericPackageDescription -> IO NixType
-packageDescriptionToNix noHash (GenericPackageDescription packageDescription' genPackageFlags' condLibrary' condExecutables') = do
+data SourceType =
+    STHackage       -- get source from hackage. url is generated in nix code, only add hash
+  | STFile FilePath -- use this file 
+  | STNone -- for testing only 
+
+packageDescriptionToNix :: SourceType -> GenericPackageDescription -> IO NixType
+packageDescriptionToNix st (GenericPackageDescription packageDescription' genPackageFlags' condLibrary' condExecutables') = do
   let PackageIdentifier (PackageName name) version = package packageDescription'
   let versionNumbers = versionBranch version
   let versionStr = intercalate "." (map show versionNumbers)
   let url = hackageSrcUrl name versionStr
-  (_, hash) <- if package packageDescription' `elem` (map (package . packageDescription) noHash)
-      then return $ (undefined, "0000000000000000000000000000000000000000000000000000")
-      else downloadCached url False
+  (_, hash) <- case st of
+       STHackage -> downloadCached url False
+       _ -> return (undefined, "not used")
   return $ NixAttrs ["name", "version"] $ M.fromList $ [
         ("name", NixString name)
       , ("version", nixVersion versionNumbers)
-      , ("sha256", NixString hash)
-      ]
+      ] ++ ( case st of
+        STHackage -> [("hash", NixString hash)]
+        STFile file -> [("srcFile", NixString file)]
+        STNone -> []
+      )
       ++ (
       -- 450 flags: False
       -- 99  flags: True Okt 2009

@@ -6,6 +6,7 @@ import qualified Data.Map as M
 import qualified Data.ByteString.Lazy as B
 import qualified Data.ByteString.Lazy.Char8 as BL
 import Distribution.Package
+import Distribution.Simple.Utils (findPackageDesc)
 import Distribution.PackageDescription
 import Config
 import Control.Exception
@@ -24,6 +25,8 @@ import Network.URI
 import Data.List
 import Utils
 import Patching
+import System.Process
+import System.IO
 
 
 -- writeConfig Map file = writeFile file $ lines $ mapWithKey
@@ -68,8 +71,35 @@ runWithConfig cfg args =  do
       ["--unpack", fullName] -> unpackPackage fullName
       ["--create-patch", fullName] -> createPatch fullName
       ["--patch-workflow", fullName] -> patchWorkflow fullName updateHackageIndexFile
+      ["--to-nix"] -> packageToNix
       _ -> liftIO $ help >> exitWith (ExitFailure 1)
 
+-- runs ./[Ss]etup dist
+-- and creates dist/name.nix 
+packageToNix :: ConfigR ()
+packageToNix = do
+  cabalFile <- liftIO $ findPackageDesc =<< getCurrentDirectory
+  fileContents <- liftIO $ readFile cabalFile
+  case parsePkgDescToEither fileContents of
+    Left e -> liftIO $ die $ "error parsing cabal file " ++ cabalFile ++ ": " ++ show e
+    Right (_, pd) -> do
+      setups <- liftIO $ filterM doesFileExist ["setup","Setup"]
+      case setups of
+        [] -> liftIO $ die "no setup file found"
+        (setupE:_) -> do
+          (inH, outH, errH, p) <- liftIO $ runInteractiveProcess ("./"++setupE) ["sdist"] Nothing Nothing
+          e <- liftIO $ liftM lines $ hGetContents outH
+          ec <- liftIO $ waitForProcess p
+          case ec of
+            ExitFailure (ec) -> liftIO $ die $ "./[sS]etup sdist failed with exit code " ++ (show ec)
+            ExitSuccess -> do
+              pwd <- liftIO $ getCurrentDirectory
+              let pref = "Source tarball created: "
+              let distFile = drop (length pref) $ head $ filter (pref `isPrefixOf`) e
+              nixT <- liftIO $ packageDescriptionToNix (STFile (pwd ++ "/" ++ distFile) ) $ pd
+              let pD = packageDescription $ pd
+              let (PackageIdentifier (PackageName name) version) = package pD
+              liftIO $ writeFile ("dist/" ++ name ++ ".nix") (renderStyle style $ toDoc $ nixT)
 
 updateHackageIndexFile :: ConfigR ()
 updateHackageIndexFile = do
@@ -94,7 +124,7 @@ updateHackageIndexFile = do
     attrs <- liftIO $ mapM (\(nr,b) -> do
                 let (PackageName name) = pkgName $ package $ packageDescription $ b
                 putStrLn $ "checking source of " ++ name  ++ "  " ++ show nr ++ "/" ++ (show . length ) allPkgs
-                packageDescriptionToNix parsedTestCabals b) $ zip [1 ..] $ targetPackages
+                packageDescriptionToNix (if b `elem` parsedTestCabals then STNone else STHackage) b) $ zip [1 ..] $ targetPackages
     let result = unlines $ "["
                            : (map (renderStyle style . toDoc) attrs)
                            ++ ["]"]
@@ -131,17 +161,29 @@ help :: IO ()
 help = do
     progName <- getProgName
     putStrLn $ unlines $ map ("  " ++ ) $
-          [ progName ++ ": a small helper which takes a list of haskell packages as input"
-          , "then resolves dependencies and finally outpus a bunch of nix expressions"
+          [ progName ++ ": get index from hackage making its contents readable by nix"
+          , ""
+          , ""
           , progName ++ " [cfg] dest         : create nix expressions and put them into dest"
           , ""
           , progName ++ "--print-format-info : prints format info about config"
           , progName ++ "--write-config [cfg]: writes an initial config file"
           , "default config path is: " ++ defaultConfigPath
           , ""
+          , "  writing patches: "
+          , "  ================ "
           , "--unpack           full-name : unpacks source into working directory"
           , "--create-patch     full-name : create patch in target destination (haskell-nix-overlay)"
           , "all:"
           , "--patch-workflow   full-name : unpack, apply patch, start $SHELL, create patch, run git add and git commit"
+          , "--to-nix           convert .cabal file in current directory into .nix format, put it into .dist/full-name.nix"
+          , "                   so that you can import it easily and append it to the list of hackage packages"
+          , "                   also run ./setup dist to create current dist file"
+          , ""
+          , "  creating environments to build cabal package "
+          , "  ============================================ "
+          , " --write-hack-nix-cabal-config: Writes a .hack-nix-cabal-config sample file"
+          , "                                containing all variations of flags"
+          , " --build-env name             : build one of those envs"
           ]
 
