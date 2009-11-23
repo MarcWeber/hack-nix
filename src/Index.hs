@@ -100,12 +100,14 @@ readIndex patchDirectory = filterFaulty . foldEntries fold emptyIndex undefined 
           asString name version = unsafePerformIO $ do -- hacky - I'm to lazy to move this into IO monad 
             let cont = asString'
             let fullName = name ++ "-" ++ version
-            let pf = patchDirectory </> fullName ++ ".patch"
+            let pf = patchDirectory </> name ++ ".patch"
             e <- doesFileExist pf
             if e then do
-                  let tmpFile = "/tmp/tmp.cabal"
+                  tmpDir <- fmap ( </> "hack-nix-tmp")  getTemporaryDirectory
+                  createDirectoryIfMissing False tmpDir
+                  let tmpFile = tmpDir </> fullName ++ ".cabal"
                   writeFile tmpFile cont
-                  run Nothing "patch" ["-p1", pf, tmpFile] Nothing Nothing
+                  run Nothing "patch" ["-p1","-i", pf] (Just tmpDir) Nothing
                   readFile' tmpFile
               else return cont
 
