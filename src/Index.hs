@@ -18,6 +18,9 @@ import Distribution.PackageDescription.Parse
 import MaybeRead (readPMaybe)
 import Distribution.ParseUtils as PU
 import Control.Monad (when)
+import System.IO.Unsafe
+import System.Directory
+import Patching
 
 type PreferredVersion = String -- TODO
 data Index = Index {
@@ -64,8 +67,14 @@ parsePkgFormFile file = do
       when ((not . null) ws) $ putStrLn $ unlines $ [ "warnings while parsing " ++ file ++ ":"] ++ ws
       return pd
 
-readIndex :: BL.ByteString -> Index
-readIndex = filterFaulty . foldEntries fold emptyIndex undefined . Tar.read . decompress
+
+-- makes sure file is fully closed after reading
+readFile' :: FilePath -> IO String
+readFile' f = do s <- readFile f
+                 return $! (length s `seq` s)
+
+readIndex :: String -> BL.ByteString -> Index
+readIndex patchDirectory = filterFaulty . foldEntries fold emptyIndex undefined . Tar.read . decompress
   where 
     filterFaulty index = index { packages = filterPackages (packages index) }
     filterPackages pkgs =
@@ -86,13 +95,26 @@ readIndex = filterFaulty . foldEntries fold emptyIndex undefined . Tar.read . de
       let path = entryPath entry
           cont (NormalFile bs _) = bs
           cont _ = error $ "NormalFile tar content expected at " ++ path
-          asString = BL.unpack $ cont $ entryContent entry
+          -- content as string. If a patch exists apply it 
+          asString' = BL.unpack $ cont $ entryContent entry
+          asString name version = unsafePerformIO $ do -- hacky - I'm to lazy to move this into IO monad 
+            let cont = asString'
+            let fullName = name ++ "-" ++ version
+            let pf = patchDirectory </> fullName ++ ".patch"
+            e <- doesFileExist pf
+            if e then do
+                  let tmpFile = "/tmp/tmp.cabal"
+                  writeFile tmpFile cont
+                  run Nothing "patch" ["-p1", pf, tmpFile] Nothing Nothing
+                  readFile' tmpFile
+              else return cont
+
           toTuple d@(D.Dependency a _) = (a, [d])
       in case splitDirectories path of
         [ "preferred-versions" ] ->
-            index { preferredVersions = Map.fromListWith (\ a b -> nub (a ++ b)) $ map toTuple $ parsePreferredVersions asString }
+            index { preferredVersions = Map.fromListWith (\ a b -> nub (a ++ b)) $ map toTuple $ parsePreferredVersions asString' }
         [ ".", name, version, _ ] ->
-            case parsePkgDescToEither asString of
+            case parsePkgDescToEither (asString name version) of
                 Right (ws, a) -> index { packages = a:(packages index)
                                       , warnings = warnings index ++ path:ws }
                 Left error -> index { warnings = warnings index ++ [ path ++ " !! parsing failed, reason: " ++ error] }

@@ -78,17 +78,17 @@ withTempFile f = do
 unpack :: String -> ConfigR String
 unpack sp =
   ( withTempFile $ \name h -> do
-    d <- derivation "[]" (show sp) "cp -ra . \\$out"
+    d <- derivation "[]" sp "cp -ra . \\$out"
     liftIO $ do 
       hPutStr h d
       hClose h
-      (_,o,err,p) <- runInteractiveProcess "nix-build" [name] Nothing Nothing
+      (_,o,err,p) <- runInteractiveProcess "nix-build" [name,"--show-trace"] Nothing Nothing
       sp' <- hGetContents o
       e <- hGetContents err
       putStrLn e
       ec <- waitForProcess p
       case ec of
-        ExitSuccess -> return $ sp'
+        ExitSuccess -> return $ init sp' -- remove trailing \n 
         ExitFailure i -> error $ "couldn't unpack " ++ (show sp) ++ " nix-build exited with " ++ (show i) ++ "\n, derivation was:\n" ++ d
                             ++ "\n\n errors:" ++ e )
 
@@ -98,7 +98,7 @@ derivation buildInputs src buildPhase = do
   allP <- asks allPackages
   return $ unlines 
           [ "let pkgs = import " ++  allP ++ " {}; in with pkgs;"
-          , "stdenv.mkDerivation {"
+          , "pkgs.stdenv.mkDerivation {"
           , "  src = " ++ quot src ++ ";"
           , "  buildInputs = " ++ buildInputs ++ ";"
           , "  phases = [\"unpackPhase\" \"buildPhase\"];"

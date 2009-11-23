@@ -158,13 +158,15 @@ instance (TypeToNix a) => TypeToNix (Condition a) where
   toNix (COr c1 c2) = keyValue "or" $ toNix [ c1, c2 ]
   toNix (CAnd c1 c2) = keyValue "and" $ toNix [ c1, c2 ]
 
+hackageSrcUrl name versionStr =
+  "http://hackage.haskell.org/packages/archive/" ++ name ++ "/" ++ versionStr ++ "/" ++ name ++ "-" ++ versionStr ++ ".tar.gz"
 
 packageDescriptionToNix :: [GenericPackageDescription] -> GenericPackageDescription -> IO NixType
 packageDescriptionToNix noHash (GenericPackageDescription packageDescription' genPackageFlags' condLibrary' condExecutables') = do
   let PackageIdentifier (PackageName name) version = package packageDescription'
   let versionNumbers = versionBranch version
   let versionStr = intercalate "." (map show versionNumbers)
-  let url = "http://hackage.haskell.org/packages/archive/" ++ name ++ "/" ++ versionStr ++ "/" ++ name ++ "-" ++ versionStr ++ ".tar.gz"
+  let url = hackageSrcUrl name versionStr
   (_, hash) <- if package packageDescription' `elem` (map (package . packageDescription) noHash)
       then return $ (undefined, "0000000000000000000000000000000000000000000000000000")
       else downloadCached url False
