@@ -42,8 +42,6 @@ filterTargetPackages :: M.Map PackageName [Dependency] -> [GenericPackageDescrip
 filterTargetPackages preferred packages = do
   tp <- asks targetPackages
   let 
-      sortByVersion :: [GenericPackageDescription] -> [GenericPackageDescription]
-      sortByVersion = sortBy ( (flip compare) `on` (pkgVersion . package . packageDescription) )
       byName :: M.Map PackageName [GenericPackageDescription]      
       byName = M.map sortByVersion $ M.fromListWith (++) [ let name = (pkgName . package . packageDescription) p in (name, [p]) | p <- packages ]
   -- after grouping all packages by name only keep wanted packages
@@ -53,10 +51,18 @@ filterTargetPackages preferred packages = do
     elected :: [Dependency] -> [ GenericPackageDescription ] -> [GenericPackageDescription]
     elected deps pkgs = concat [ filter (matchDepndencyConstraints d . package . packageDescription ) pkgs | d <- deps ]
 
+    sortByVersion :: [GenericPackageDescription] -> [GenericPackageDescription]
+    sortByVersion = sortBy ( (flip compare) `on` (pkgVersion . package . packageDescription) )
+
+    latest = take 1 . sortByVersion
+
     filterByName :: TargetPackages Dependency -> (PackageName, [GenericPackageDescription]) -> [GenericPackageDescription]
     filterByName tp (pn@(PackageName name), ps) = case tp of
       TPAll -> ps
-      TPMostRecentPreferred deps -> nub $ head ps : elected deps ps ++ elected (fromMaybe [] (M.lookup pn preferred)) ps
+      TPMostRecentPreferred deps -> nub $
+        head ps -- most recent 
+        : elected deps ps -- selected by user 
+        ++ (latest (elected (fromMaybe [] (M.lookup pn preferred)) ps)) -- preferred. This list is contained in hackage index. Only keep latest
       TPCustom deps -> nub $ elected deps ps
 
 
