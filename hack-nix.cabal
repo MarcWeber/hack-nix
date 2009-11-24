@@ -1,6 +1,6 @@
 Name:            hack-nix
 category:
-version:         0.1.0
+version:         0.1.1
 synopsis:        hackage to nix software distribution systrem
 category:        Utils
 maintainer:      marco-oweber@gmx.de
@@ -21,7 +21,7 @@ build-depends:     haskell98
                 , hslogger
                 , pretty,
 
-                 base >= 2 && < 4,
+                 base >= 2 && < 5,
                  Cabal >= 1.6 && < 1.7,
                  filepath >= 1.0,
                  network >= 1 && < 3,

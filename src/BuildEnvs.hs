@@ -88,6 +88,8 @@ buildEnv envName = do
       case  splitLine h of
         Left s -> liftIO $ die $ "can't read config line: " ++ h ++ " result : " ++ show s
         Right (envName, flags) -> do
+
+          -- build dist file more important write .cabal file in a nix readable format: 
           thisPkgNixFile <- packageToNix
 
           let nixFilesDir = (hackNixEnvs </> "nix")
@@ -128,4 +130,4 @@ buildEnv envName = do
           liftIO $ do
             let envPath = (hackNixEnvs </> envName)
             run (Just 0) "nix-env" ["-p", envPath, "-iA", "env", "-f", nixFile, "--show-trace"] Nothing Nothing 
-            putStrLn $ "success: Now source " ++ envPath ++ "/source-me/env"
+            putStrLn $ "success: Now source " ++ envPath ++ "/source-me/haskell-env"
