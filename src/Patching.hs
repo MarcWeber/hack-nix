@@ -47,23 +47,6 @@ nixStoreSrcDir fullName =
     (p,_) <- liftIO $ downloadCached url False
     unpack p
 
--- exits if command exitst with non zero exit status
-run :: Maybe Int -> String -> [String] -> Maybe String -> Maybe Handle -> IO ()
-run mbExpectedEC prog args mbWorkDir mbStdout = do
-  let str = prog ++ " " ++ show args ++ " in " ++ show mbWorkDir
-  putStrLn $ "running :" ++ str
-  h <- runProcess prog args mbWorkDir  Nothing Nothing mbStdout Nothing
-  ec <- waitForProcess h
-  let got = case ec of
-              ExitSuccess -> 0
-              ExitFailure ec -> ec
-  case mbExpectedEC of
-    Nothing -> return ()
-    (Just expectedEC) -> 
-      when (expectedEC /= got) $ do
-          putStrLn $ "run: " ++ str
-          die $ "expected exit code: " ++ show expectedEC ++ " but got: " ++ show got
-  
 
 unpackPackage, applyPatch, createPatch:: String -> ConfigR ()
 

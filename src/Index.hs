@@ -20,7 +20,7 @@ import Distribution.ParseUtils as PU
 import Control.Monad (when)
 import System.IO.Unsafe
 import System.Directory
-import Patching
+import Utils
 
 type PreferredVersion = String -- TODO
 data Index = Index {
@@ -50,22 +50,6 @@ instance Show Index where
 emptyIndex = Index Map.empty [] []
 
 type IndexMap = Map.Map String (Set.Set Version)
-
-parseResultToEither :: PU.ParseResult a -> Either String ([String],a)
-parseResultToEither (PU.ParseOk warnings a) = Right (map show warnings, a)
-parseResultToEither (PU.ParseFailed error) = Left (show error)
-
-parsePkgDescToEither :: String -> Either String ([String], GenericPackageDescription)
-parsePkgDescToEither = parseResultToEither . parsePackageDescription
-
-parsePkgFormFile :: FilePath -> IO GenericPackageDescription
-parsePkgFormFile file = do
-  c <- readFile file
-  case parsePkgDescToEither c of
-    Left e -> error $ unlines [ "parsing of " ++ file ++ "failed :", e]
-    Right (ws, pd) -> do
-      when ((not . null) ws) $ putStrLn $ unlines $ [ "warnings while parsing " ++ file ++ ":"] ++ ws
-      return pd
 
 
 -- makes sure file is fully closed after reading

@@ -25,6 +25,7 @@ import Network.URI
 import Data.List
 import Utils
 import Patching
+import BuildEnvs
 import System.Process
 import System.IO
 
@@ -72,34 +73,29 @@ runWithConfig cfg args =  do
       ["--create-patch", fullName] -> createPatch fullName
       ["--patch-workflow", fullName] -> patchWorkflow fullName updateHackageIndexFile
       ["--to-nix"] -> packageToNix
+      ["--write-hack-nix-cabal-config"] -> writeHackNixCabalConfig
+      ["--build-env", name] -> buildEnv name
       _ -> liftIO $ help >> exitWith (ExitFailure 1)
 
 -- runs ./[Ss]etup dist
 -- and creates dist/name.nix 
 packageToNix :: ConfigR ()
 packageToNix = do
-  cabalFile <- liftIO $ findPackageDesc =<< getCurrentDirectory
-  fileContents <- liftIO $ readFile cabalFile
-  case parsePkgDescToEither fileContents of
-    Left e -> liftIO $ die $ "error parsing cabal file " ++ cabalFile ++ ": " ++ show e
-    Right (_, pd) -> do
-      setups <- liftIO $ filterM doesFileExist ["setup","Setup"]
-      case setups of
-        [] -> liftIO $ die "no setup file found"
-        (setupE:_) -> do
-          (inH, outH, errH, p) <- liftIO $ runInteractiveProcess ("./"++setupE) ["sdist"] Nothing Nothing
-          e <- liftIO $ liftM lines $ hGetContents outH
-          ec <- liftIO $ waitForProcess p
-          case ec of
-            ExitFailure (ec) -> liftIO $ die $ "./[sS]etup sdist failed with exit code " ++ (show ec)
-            ExitSuccess -> do
-              pwd <- liftIO $ getCurrentDirectory
-              let pref = "Source tarball created: "
-              let distFile = drop (length pref) $ head $ filter (pref `isPrefixOf`) e
-              nixT <- liftIO $ packageDescriptionToNix (STFile (pwd ++ "/" ++ distFile) ) $ pd
-              let pD = packageDescription $ pd
-              let (PackageIdentifier (PackageName name) version) = package pD
-              liftIO $ writeFile ("dist/" ++ name ++ ".nix") (renderStyle style $ toDoc $ nixT)
+  pd <- parseCabalFileCurrentDir
+  setupE <- findSetup
+  (inH, outH, errH, p) <- liftIO $ runInteractiveProcess ("./"++setupE) ["sdist"] Nothing Nothing
+  e <- liftIO $ liftM lines $ hGetContents outH
+  ec <- liftIO $ waitForProcess p
+  case ec of
+    ExitFailure (ec) -> liftIO $ die $ "./[sS]etup sdist failed with exit code " ++ (show ec)
+    ExitSuccess -> do
+      pwd <- liftIO $ getCurrentDirectory
+      let pref = "Source tarball created: "
+      let distFile = drop (length pref) $ head $ filter (pref `isPrefixOf`) e
+      nixT <- liftIO $ packageDescriptionToNix (STFile (pwd ++ "/" ++ distFile) ) $ pd
+      let pD = packageDescription $ pd
+      let (PackageIdentifier (PackageName name) version) = package pD
+      liftIO $ writeFile ("dist/" ++ name ++ ".nix") (renderStyle style $ toDoc $ nixT)
 
 updateHackageIndexFile :: ConfigR ()
 updateHackageIndexFile = do
@@ -138,27 +134,29 @@ updateHackageIndexFile = do
 
 main = (flip finally) saveNixCache $ do
   loadNixCache
+  dcp <- defaultConfigPath
   args <- getArgs
   case args of
-    ["--patch-workflow"] -> writeSampleConfig defaultConfigPath
-    ["--write-config"] -> writeSampleConfig defaultConfigPath
+    ["--patch-workflow"] -> writeSampleConfig dcp
+    ["--write-config"] -> writeSampleConfig dcp
     ["--write-config", cfg] -> writeSampleConfig cfg
     ["--print-format-info"] -> putStrLn $ formatInfo
     ["-h"] -> help
     ["--help"] -> help
     ("--config":cfg:args) -> do runWithConfig cfg args
     args -> do
-      de <- doesFileExist defaultConfigPath
+      de <- doesFileExist dcp
       case de of
-        True -> runWithConfig defaultConfigPath args
-        False -> do  putStrLn $ "sample config does not exist, writing it to " ++ defaultConfigPath
+        True -> runWithConfig dcp args
+        False -> do  putStrLn $ "sample config does not exist, writing it to " ++ dcp
                      putStrLn "adjust it to your needs and rerun .."
-                     writeSampleConfig defaultConfigPath
+                     writeSampleConfig dcp
                      putStrLn "done, also see --help"
                      exitWith (ExitFailure 1)
 
 help :: IO ()
 help = do
+    dcp <- defaultConfigPath
     progName <- getProgName
     putStrLn $ unlines $ map ("  " ++ ) $
           [ progName ++ ": get index from hackage making its contents readable by nix"
@@ -168,7 +166,7 @@ help = do
           , ""
           , progName ++ "--print-format-info : prints format info about config"
           , progName ++ "--write-config [cfg]: writes an initial config file"
-          , "default config path is: " ++ defaultConfigPath
+          , "default config path is: " ++ dcp
           , ""
           , "  writing patches: "
           , "  ================ "

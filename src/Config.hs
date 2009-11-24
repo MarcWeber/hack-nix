@@ -1,12 +1,18 @@
 module Config where
+import System.Directory
+import System.FilePath
 import Data.Maybe
 import Data.Char
 import Data.List 
 import Distribution.Package
 import Distribution.Text
 import Control.Monad.Reader
-hashCacheFile = ".nix-cache" -- contains lines ("url","store path")
-defaultConfigPath = ".hack-nix"
+
+hacknixFile file = do
+  fmap (</> ".hack-nix" </> file) getHomeDirectory
+  
+hashCacheFile = hacknixFile "nix-cache" -- contains lines ("url","store path")
+defaultConfigPath = hacknixFile "config"
 
 data TargetPackages a = TPAll
                     | TPMostRecentPreferred [a] -- most recent version and the ones listed in the preferred-versions file of the hackage index .tar file 
@@ -80,3 +86,6 @@ parseConfig config =
 
 type ConfigR b = ReaderT Config IO b
 withConfig config f = (runReaderT f) config
+ 
+hackNixCabalConfig :: String
+hackNixCabalConfig = ".hack-nix-cabal-config" -- one definition 
