@@ -179,7 +179,7 @@ packageDescriptionToNix st (GenericPackageDescription packageDescription' genPac
         ("name", NixString name)
       , ("version", nixVersion versionNumbers)
       ] ++ ( case st of
-        STHackage -> [("hash", NixString hash)]
+        STHackage -> [("sha256", NixString hash)]
         STFile file -> [("srcFile", NixString file)]
         STNone -> []
       )
