@@ -13,6 +13,7 @@ hacknixFile file = do
   
 hashCacheFile = hacknixFile "nix-cache" -- contains lines ("url","store path")
 defaultConfigPath = hacknixFile "config"
+hackNixEnvs = "hack-nix-envs";
 
 data TargetPackages a = TPAll
                     | TPMostRecentPreferred [a] -- most recent version and the ones listed in the preferred-versions file of the hackage index .tar file 
@@ -31,11 +32,12 @@ data Config = Config
   , testCabals :: [ FilePath ]
   , patchDirectory :: FilePath
   , workDirectory :: FilePath
+  , haskellNixOverlay :: FilePath
   } deriving (Show)
 
 configErr value = error $ "missing configuration file value: " ++ value
 emptyConfig = Config (configErr "ghc tar file") Nothing (configErr "hackage index file")
-                     [] [] "" (TPMostRecentPreferred []) Nothing [] "" ""
+                     [] [] "" (TPMostRecentPreferred []) Nothing [] "" "" ""
 
 defaultConfigContents = unlines
   [ "ghc http://haskell.org/ghc/dist/6.10.1/ghc-6.10.1-src.tar.bz2 # url or sourceByName name"
@@ -49,6 +51,7 @@ defaultConfigContents = unlines
   , "test-cabal-files [\"tests/test.cabal\"] # this will be added to the package db. used by test cases"
   , "patch-directory \"path-to-nix-haskell-repo/patches\" # Path to nix-haskell-repo/patches"
   , "work-directory \"/tmp/work-directory\"   # source will be put into this directory so that you can write patches easily"
+  , "haskell-nix-overlay \"path-to-nix-haskell-repo\" # Path to nix-haskell-repo/patches"
   ]
 
 writeSampleConfig = (flip writeFile) defaultConfigContents
@@ -57,7 +60,7 @@ formatInfo = error "TODO"
 
 parseConfig :: String -> Config
 parseConfig config = 
-    foldr parseLine emptyConfig $ (map dropSpaces) $ lines config
+    foldr parseLine emptyConfig $ (map dropSpaces) $ filter (not . all isSpace) $ lines config
   where parseLine ('#':_) cfg = cfg
         parseLine l cfg 
           | isPrefixOf "all-packages.nix " l = cfg { allPackages = dropS (length "all-packages.nix") $ dropEOLComment l }
@@ -71,6 +74,7 @@ parseConfig config =
           | isPrefixOf "test-cabal-files " l = cfg { testCabals = read $ dropS (length "test-cabal-files") $ dropEOLComment l }
           | isPrefixOf "patch-directory" l = cfg { patchDirectory = read $ dropS (length "patch-directory") $ dropEOLComment l }
           | isPrefixOf "work-directory" l = cfg { workDirectory = read $ dropS (length "work-directory") $ dropEOLComment l }
+          | isPrefixOf "haskell-nix-overlay" l = cfg { haskellNixOverlay = read $ dropS (length "haskell-nix-overlay") $ dropEOLComment l }
           | otherwise = error $ "can't parse config line " ++ l
 
         dropSpaces = dropWhile isSpace

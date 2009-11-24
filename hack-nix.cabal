@@ -9,7 +9,6 @@ build-type:      Simple
 
 build-depends:     haskell98
                  , base
-                 , GetOptions
                  , directory
                 , containers
                 , network
@@ -20,8 +19,7 @@ build-depends:     haskell98
                 , process
                 , mtl
                 , hslogger
-                , pretty
-                ,gibtsnicht,
+                , pretty,
 
                  base >= 2 && < 4,
                  Cabal >= 1.6 && < 1.7,

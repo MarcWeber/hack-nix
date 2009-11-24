@@ -16,7 +16,6 @@ import Data.Maybe
 import Control.Monad
 import Control.Monad.Trans
 import System.Exit
-import GetOptions
 import System.Directory
 import System.Environment
 import Network.URI
@@ -41,8 +40,8 @@ patchFile fullName = do
 
 nixStoreSrcDir :: String -> ConfigR FilePath
 nixStoreSrcDir fullName =
-  let (versionStrR,_:nameR) = break (== '-') $ reverse fullName
-      url = hackageSrcUrl (reverse nameR) (reverse versionStrR)
+  let (name, version) = splitName fullName
+      url = hackageSrcUrl name version
   in do
     (p,_) <- liftIO $ downloadCached url False
     unpack p

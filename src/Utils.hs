@@ -76,3 +76,8 @@ run mbExpectedEC prog args mbWorkDir mbStdout = do
           putStrLn $ "run: " ++ str
           die $ "expected exit code: " ++ show expectedEC ++ " but got: " ++ show got
   
+
+splitName :: String -> (String, String)
+splitName fullName =
+    let (versionStrR,_:nameR) = break (== '-') $ reverse fullName
+    in (reverse nameR, reverse versionStrR)

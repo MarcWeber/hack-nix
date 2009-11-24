@@ -18,7 +18,6 @@ import Data.Maybe
 import Control.Monad
 import Control.Monad.Trans
 import System.Exit
-import GetOptions
 import System.Directory
 import System.Environment
 import Network.URI
@@ -72,30 +71,10 @@ runWithConfig cfg args =  do
       ["--unpack", fullName] -> unpackPackage fullName
       ["--create-patch", fullName] -> createPatch fullName
       ["--patch-workflow", fullName] -> patchWorkflow fullName updateHackageIndexFile
-      ["--to-nix"] -> packageToNix
+      ["--to-nix"] -> packageToNix >> return ()
       ["--write-hack-nix-cabal-config"] -> writeHackNixCabalConfig
       ["--build-env", name] -> buildEnv name
       _ -> liftIO $ help >> exitWith (ExitFailure 1)
-
--- runs ./[Ss]etup dist
--- and creates dist/name.nix 
-packageToNix :: ConfigR ()
-packageToNix = do
-  pd <- parseCabalFileCurrentDir
-  setupE <- findSetup
-  (inH, outH, errH, p) <- liftIO $ runInteractiveProcess ("./"++setupE) ["sdist"] Nothing Nothing
-  e <- liftIO $ liftM lines $ hGetContents outH
-  ec <- liftIO $ waitForProcess p
-  case ec of
-    ExitFailure (ec) -> liftIO $ die $ "./[sS]etup sdist failed with exit code " ++ (show ec)
-    ExitSuccess -> do
-      pwd <- liftIO $ getCurrentDirectory
-      let pref = "Source tarball created: "
-      let distFile = drop (length pref) $ head $ filter (pref `isPrefixOf`) e
-      nixT <- liftIO $ packageDescriptionToNix (STFile (pwd ++ "/" ++ distFile) ) $ pd
-      let pD = packageDescription $ pd
-      let (PackageIdentifier (PackageName name) version) = package pD
-      liftIO $ writeFile ("dist/" ++ name ++ ".nix") (renderStyle style $ toDoc $ nixT)
 
 updateHackageIndexFile :: ConfigR ()
 updateHackageIndexFile = do
