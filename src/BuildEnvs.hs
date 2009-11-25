@@ -116,20 +116,34 @@ buildEnv envName = do
           let PackageIdentifier (PackageName pName) version = package $ packageDescription pd
               flagsStr = intercalate " " [ n ++ " = " ++ (if set then "true" else "false") ++ "; " | (n, set) <- flags]
 
-          -- I should do proper quoting etc - I'm too lazy 
+          cht <- asks createHaskellTags 
+          let tagOptions = case cht of
+                TTNone -> ["         # no tags"]
+                TTVim  -> ["         createHaskellTagsFor = pkg.propagatedBuildInputs",
+                           "                              ++ [ (pkgs.haskellPackages.ghcReal // { srcDir = \"libraries compiler/main\"; })",
+                           "                                   (pkgs.haskellPackages.ghcReal // { srcDir = \"compiler/main\"; })",
+                           "                                 ];"
+                         ]
+                TTEmacs ->["         # creating tags for Emacs is not supperted yet (FIXME)" ]
 
           -- I'm too lazy to get all dependencies of this .cabal file as well. 
           -- so built cabal package from dist/full-name.nix and use its buildInputs and propagatedBuildInputs value
-          liftIO $ writeFile nixFile $ unlines [
+          liftIO $ writeFile nixFile $ unlines $ [
                "let nixOverlay = import \"" ++ overlayRepo ++ "\" {};",
                "    lib = nixOverlay.lib;",
+               "    pkgs = nixOverlay.pkgs;",
                "    pkg = builtins.getAttr \"" ++ pName ++ "\" (nixOverlay.haskellOverlayPackagesFun.merge (args: args // {",
                "      targetPackages = [{ n = \"" ++ pName ++ "\"; v = \"99999\"; }];",
                "      packageFlags = lib.attrSingleton \"" ++ pName ++ "-99999\" { " ++ flagsStr ++ " };",
                "      packages = args.packages ++ [ (nixOverlay.libOverlay.pkgFromDb (import ./" ++ takeFileName thisPkgNixFile9 ++ ")) ];",
                "      debugS = true;",
                "    })).result;",
-               "in { env = nixOverlay.envFromHaskellLibs (pkg.buildInputs ++ pkg.propagatedBuildInputs); }"
+               "in {",
+               "      env = nixOverlay.envFromHaskellLibs {"
+               ] ++ tagOptions ++ [
+               "         buildInputs = pkg.buildInputs ++ pkg.propagatedBuildInputs;",
+               "      };",
+               "   }"
             ]
           
           njFlags <- getJFlags

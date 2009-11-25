@@ -1,9 +1,8 @@
 Name:            hack-nix
-category:
 version:         0.1.1
 synopsis:        hackage to nix software distribution systrem
 category:        Utils
-maintainer:      marco-oweber@gmx.de
+maintainer:      Marc Weber <marco-oweber@gmx.de>
 description:     utility helping getting hackage packages into the nix package manager
 build-type:      Simple
 
