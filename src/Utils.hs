@@ -1,5 +1,6 @@
 {-# OPTIONS_GHC -XNoMonomorphismRestriction #-}
 module Utils where
+import Control.Monad.Reader.Class
 import Distribution.ParseUtils as PU
 import Distribution.Package
 import Distribution.Simple.Utils (findPackageDesc)
@@ -81,3 +82,8 @@ splitName :: String -> (String, String)
 splitName fullName =
     let (versionStrR,_:nameR) = break (== '-') $ reverse fullName
     in (reverse nameR, reverse versionStrR)
+
+getJFlags :: ConfigR [String]
+getJFlags = do
+  j <- asks nixConcurrency
+  return ["-j" , show j]

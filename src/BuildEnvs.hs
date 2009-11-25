@@ -74,20 +74,25 @@ buildEnv envName = do
       readFlag envName = (envName, True)
       rmComments =  (filter (not . ("#" `isPrefixOf`)))
       splitLine l = case break (== ':') l of
-        (envName, (':':flags)) -> Right (envName, (map readFlag . words) flags)
+        (envName, (':':flags)) -> Right (envName, (map readFlag . words) flags, flags)
         r -> Left r
-        
-  fc <- liftIO $ liftM ( rmComments . lines) $ readFile hackNixCabalConfig
+
+  -- if file doesn't exist assume "default: contents
+  de <- liftIO $ doesFileExist hackNixCabalConfig
+  fc <- if de then
+          liftIO $ liftM ( rmComments . lines) $ readFile hackNixCabalConfig
+        else return ["default:"]
+
   case filter ( (envName++":") `isPrefixOf`) fc of
     [] -> liftIO $ die $ unlines [
                  "configuration with envName " ++ envName ++ "not found in" ++ hackNixCabalConfig,
-                 "I know about these names: " ++ show [ envName | Right (envName, _)  <- map splitLine fc ]
+                 "I know about these names: " ++ show [ envName | Right (envName, _, _)  <- map splitLine fc ]
                 ]
     (h:x:_) -> liftIO $ die $ "envName " ++ envName ++ " is defined multiple times"
     (h:_) -> do
       case  splitLine h of
         Left s -> liftIO $ die $ "can't read config line: " ++ h ++ " result : " ++ show s
-        Right (envName, flags) -> do
+        Right (envName, flags, flagsStr) -> do
 
           -- build dist file more important write .cabal file in a nix readable format: 
           thisPkgNixFile <- packageToNix
@@ -127,7 +132,15 @@ buildEnv envName = do
                "in { env = nixOverlay.envFromHaskellLibs (pkg.buildInputs ++ pkg.propagatedBuildInputs); }"
             ]
           
+          njFlags <- getJFlags
           liftIO $ do
             let envPath = (hackNixEnvs </> envName)
-            run (Just 0) "nix-env" ["-p", envPath, "-iA", "env", "-f", nixFile, "--show-trace"] Nothing Nothing 
-            putStrLn $ "success: Now source " ++ envPath ++ "/source-me/haskell-env"
+            run (Just 0) "nix-env" (["-p", envPath, "-iA", "env", "-f", nixFile, "--show-trace"] ++ njFlags) Nothing Nothing 
+            putStrLn $ unlines [
+                "success:",
+                "# source:",
+                "source " ++ envPath ++ "/source-me/haskell-env",
+                "# and configure",
+                "[ -e Setup ] || ghc --make Setup.hs",
+                "./Setup configure --flags \"" ++ flagsStr ++ "\" && ./Setup build "
+              ]

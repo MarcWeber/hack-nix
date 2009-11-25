@@ -79,6 +79,7 @@ runWithConfig cfg args =  do
       ["--patch-workflow", fullName] -> patchWorkflow fullName updateHackageIndexFile
       ["--to-nix"] -> packageToNix >> return ()
       ["--write-hack-nix-cabal-config"] -> writeHackNixCabalConfig
+      ["--build-env"] -> buildEnv "default" -- assume default
       ["--build-env", name] -> buildEnv name
       _ -> liftIO $ help >> exitWith (ExitFailure 1)
 
@@ -167,6 +168,6 @@ help = do
           , "  ============================================ "
           , " --write-hack-nix-cabal-config: Writes a .hack-nix-cabal-config sample file"
           , "                                containing all variations of flags"
-          , " --build-env name             : build one of those envs"
+          , " --build-env name [=default]   : build one of those envs"
           ]
 
