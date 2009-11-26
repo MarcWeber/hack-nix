@@ -102,7 +102,7 @@ patchWorkflow fullName recreateHackNixFile = do
   createPatch fullName
   pf <- patchFile fullName
   a <- liftIO $ do
-    putStrLn "recrate hack-nix-db.nix file? y/[n]"
+    putStrLn "recreate hack-nix-db.nix file? y/[n]"
     getChar
   when (a == 'y') $
     recreateHackNixFile
