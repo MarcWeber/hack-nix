@@ -166,7 +166,7 @@ help = do
           , ""
           , "  creating environments to build cabal package "
           , "  ============================================ "
-          , " --write-hack-nix-cabal-config: Writes a .hack-nix-cabal-config sample file"
+          , " --write-hack-nix-cabal-config : Writes a .hack-nix-cabal-config sample file"
           , "                                containing all variations of flags"
           , " --build-env name [=default]   : build one of those envs"
           ]

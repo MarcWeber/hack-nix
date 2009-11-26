@@ -1,5 +1,6 @@
 {-# OPTIONS_GHC -XNoMonomorphismRestriction #-}
 module Utils where
+import Data.Maybe
 import Control.Monad.Reader.Class
 import Distribution.ParseUtils as PU
 import Distribution.Package
@@ -54,11 +55,26 @@ parseCabalFileCurrentDir = do
     Left e -> liftIO $ die $ "error parsing cabal file " ++ cabalFile ++ ": " ++ show e
     Right (_, pd) -> return pd
 
+findOneOfFiles :: [FilePath] -> IO (Maybe FilePath)
+findOneOfFiles list =
+  liftM (listToMaybe) $ filterM doesFileExist list
+
+findSetup :: IO FilePath
 findSetup = do
-  setups <- liftIO $ filterM doesFileExist ["setup","Setup"]
+  setups <- findOneOfFiles ["setup","Setup"]
   case setups of
-    [] -> liftIO $ die "no setup file found"
-    (setupE:_) -> return setupE
+    Nothing -> do
+      source <- findOneOfFiles ["Setup.lhs", "Setup.hs"]
+      case source of
+        Nothing -> die "no setup file found. Couldn't find Setup.[l]hs either"
+        Just src -> do
+          putStrLn "[Ss]etup not found, copmile? y/[n]"
+          c <- getChar
+          if (c == 'y') then do
+              run (Just 0) "ghc" ["--make", src] Nothing Nothing
+              return "Setup"
+            else die "can't continue"
+    Just setupE -> return setupE
 
 -- exits if command exitst with non zero exit status
 run :: Maybe Int -> String -> [String] -> Maybe String -> Maybe Handle -> IO ()

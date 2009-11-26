@@ -33,13 +33,14 @@ writeHackNixCabalConfig = do
   let combinations =
         foldr (\n e -> e >>= n) [[]] [ (\l -> [ (name, def):l, (name, not def):l ]) | (name, def) <- flags ]
 
-  liftIO $ print combinations
   let names = "default":(map ( ("way" ++ ) . show) [2..])
   let header = "# generated lines:\n"
-  liftIO $ hPutStrLn h $
+  liftIO $ do
+    hPutStrLn h $
       if null combinations then
         header ++ "default:\n"
       else header ++ (unlines $ zipWith (\n flags -> n ++ ":" ++ flagsToString flags) names combinations)
+    hClose h
 
   where flagsToString list =
           intercalate " " [ (if value then "" else "-") ++ name | (name, value) <- list ]
@@ -50,7 +51,7 @@ writeHackNixCabalConfig = do
 packageToNix :: ConfigR FilePath
 packageToNix = do
   pd <- parseCabalFileCurrentDir
-  setupE <- findSetup
+  setupE <- liftIO $ findSetup
   (inH, outH, errH, p) <- liftIO $ runInteractiveProcess ("./"++setupE) ["sdist"] Nothing Nothing
   e <- liftIO $ liftM lines $ hGetContents outH
   ec <- liftIO $ waitForProcess p
@@ -92,7 +93,7 @@ buildEnv envName = do
     (h:_) -> do
       case  splitLine h of
         Left s -> liftIO $ die $ "can't read config line: " ++ h ++ " result : " ++ show s
-        Right (envName, flags, flagsStr) -> do
+        Right (envName, flags, flagsStr') -> do
 
           -- build dist file more important write .cabal file in a nix readable format: 
           thisPkgNixFile <- packageToNix
@@ -156,5 +157,5 @@ buildEnv envName = do
                 "source " ++ envPath ++ "/source-me/haskell-env",
                 "# and configure",
                 "[ -e Setup ] || ghc --make Setup.hs",
-                "./Setup configure --flags \"" ++ flagsStr ++ "\" && ./Setup build "
+                "./Setup configure --flags \"" ++ flagsStr' ++ "\" && ./Setup build "
               ]
