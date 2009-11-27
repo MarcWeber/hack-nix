@@ -15,4 +15,5 @@ Run:
 
 source hack-nix-envs/default/source-me/haskell-env
 
-and run cabal commands
+
+Should this project be renamed to cabal2nix ?
