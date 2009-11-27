@@ -126,6 +126,18 @@ instance ( TypeToNix v, TypeToNix c, TypeToNix a
       , ("cdeps", toNix components) -- (i) cdeps = "conditional deps" - this is shorter 
     ]
 
+gtk2hsMetaPkgName = "gtk2hs-meta-package-hack"
+gtk2hsHack "svgcairo" = gtk2hsMetaPkgName
+gtk2hsHack "glib" = gtk2hsMetaPkgName
+gtk2hsHack "cairo" = gtk2hsMetaPkgName
+gtk2hsHack "gtk2hs" = gtk2hsMetaPkgName
+gtk2hsHack "soegtk" = gtk2hsMetaPkgName
+gtk2hsHack "gio" = gtk2hsMetaPkgName
+gtk2hsHack "gtksourceview2" = gtk2hsMetaPkgName
+gtk2hsHack "glade" = gtk2hsMetaPkgName
+gtk2hsHack "gtk" = gtk2hsMetaPkgName
+gtk2hsHack s = s
+
 -- returns
 -- { n = "Cabal"; v = [ 1 4 4 0=; }
 -- { n = "Cabal; }  = any version
@@ -133,7 +145,7 @@ instance ( TypeToNix v, TypeToNix c, TypeToNix a
 instance TypeToNix Dependency where
   toNix (Dependency (PackageName packageName) versionRange) = 
     let (NixAttrs _ map') = toNix versionRange
-    in NixAttrs [] $ M.fromList [ ("n", NixString packageName) ] `M.union` map'
+    in NixAttrs [] $ M.fromList [ ("n", NixString (gtk2hsHack packageName)) ] `M.union` map'
   
 instance TypeToNix Executable where
   toNix (Executable name _ _) = NixString name
