@@ -38,13 +38,13 @@ data Config = Config
   , patchDirectory :: FilePath
   , workDirectory :: FilePath
   , haskellNixOverlay :: FilePath
-  , nixConcurrency :: Int
+  , nixFlags :: [String]
   , createHaskellTags :: TagType
   } deriving (Show)
 
 configErr value = error $ "missing configuration file value: " ++ value
 emptyConfig = Config (configErr "ghc tar file") Nothing (configErr "hackage index file")
-                     [] [] "" (TPMostRecentPreferred []) Nothing [] "" "" "" 1 TTNone
+                     [] [] "" (TPMostRecentPreferred []) Nothing [] "" "" "" [] TTNone
 
 defaultConfigContents = unlines
   [ "ghc http://haskell.org/ghc/dist/6.10.1/ghc-6.10.1-src.tar.bz2 # url or sourceByName name"
@@ -59,7 +59,7 @@ defaultConfigContents = unlines
   , "patch-directory \"path-to-nix-haskell-repo/patches\" # Path to nix-haskell-repo/patches"
   , "work-directory \"/tmp/work-directory\"   # source will be put into this directory so that you can write patches easily"
   , "haskell-nix-overlay \"path-to-nix-haskell-repo\" # Path to nix-haskell-repo/patches"
-  , "nix-concurrency 1 # -j flag for nix-* commands"
+  , "nix-flags -j1 -K # -j flag for nix-* commands or -K (keep build) flag"
   , "create-haskell-tags TTVim # TTVim | TTEmacs | TTNone"
   ]
 
@@ -84,7 +84,7 @@ parseConfig config =
           | isPrefixOf "patch-directory" l = cfg { patchDirectory = read $ dropS (length "patch-directory") $ dropEOLComment l }
           | isPrefixOf "work-directory" l = cfg { workDirectory = read $ dropS (length "work-directory") $ dropEOLComment l }
           | isPrefixOf "haskell-nix-overlay" l = cfg { haskellNixOverlay = read $ dropS (length "haskell-nix-overlay") $ dropEOLComment l }
-          | isPrefixOf "nix-concurrency" l = cfg { nixConcurrency = read $ dropS (length "nix-concurrency") $ dropEOLComment l }
+          | isPrefixOf "nix-flags" l = cfg { nixFlags = read $ dropS (length "nix-flags") $ dropEOLComment l }
           | isPrefixOf "create-haskell-tags" l = cfg { createHaskellTags = read $ dropS (length "create-haskell-tags") $ dropEOLComment l }
           | otherwise = error $ "can't parse config line " ++ l
 

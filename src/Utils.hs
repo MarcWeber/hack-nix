@@ -20,6 +20,11 @@ import Distribution.Package as D
 import Distribution.Text
 import Distribution.Package
 
+-- makes sure file is fully closed after reading
+readFile' :: FilePath -> IO String
+readFile' f = do s <- readFile f
+                 return $! (length s `seq` s)
+
 
 parseResultToEither :: PU.ParseResult a -> Either String ([String],a)
 parseResultToEither (PU.ParseOk warnings a) = Right (map show warnings, a)
@@ -98,8 +103,3 @@ splitName :: String -> (String, String)
 splitName fullName =
     let (versionStrR,_:nameR) = break (== '-') $ reverse fullName
     in (reverse nameR, reverse versionStrR)
-
-getJFlags :: ConfigR [String]
-getJFlags = do
-  j <- asks nixConcurrency
-  return ["-j" , show j]

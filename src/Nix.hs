@@ -16,6 +16,7 @@ import System.Process
 import Control.Monad
 import Control.Monad.Reader
 import System.Exit
+import Utils
 import qualified Data.ByteString.Lazy.Char8 as BL
 import qualified Data.ByteString.Char8 as BS
 
@@ -28,7 +29,7 @@ loadNixCache = do
   cacheFile <-  hashCacheFile
   de <- doesFileExist cacheFile
   writeIORef nixCache . M.fromList =<< if de
-      then liftM (map read . lines . BS.unpack) $ BS.readFile cacheFile
+      then liftM (map read . lines ) $ readFile' cacheFile
       else return []
 
 saveNixCache :: IO ()

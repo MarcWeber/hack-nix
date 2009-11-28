@@ -147,10 +147,10 @@ buildEnv envName = do
                "   }"
             ]
           
-          njFlags <- getJFlags
+          nixFlags <- asks nixFlags
           liftIO $ do
             let envPath = (hackNixEnvs </> envName)
-            run (Just 0) "nix-env" (["-p", envPath, "-iA", "env", "-f", nixFile, "--show-trace"] ++ njFlags) Nothing Nothing 
+            run (Just 0) "nix-env" (["-p", envPath, "-iA", "env", "-f", nixFile, "--show-trace"] ++ nixFlags) Nothing Nothing 
             putStrLn $ unlines [
                 "success:",
                 "# source:",

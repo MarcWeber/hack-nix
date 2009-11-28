@@ -52,11 +52,6 @@ emptyIndex = Index Map.empty [] []
 type IndexMap = Map.Map String (Set.Set Version)
 
 
--- makes sure file is fully closed after reading
-readFile' :: FilePath -> IO String
-readFile' f = do s <- readFile f
-                 return $! (length s `seq` s)
-
 readIndex :: String -> BL.ByteString -> Index
 readIndex patchDirectory = filterFaulty . foldEntries fold emptyIndex undefined . Tar.read . decompress
   where 
