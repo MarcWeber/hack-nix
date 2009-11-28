@@ -16,8 +16,11 @@ defaultConfigPath = hacknixFile "config"
 hackNixEnvs = "hack-nix-envs";
 
 data TargetPackages a = TPAll
-                    | TPMostRecentPreferred [a] -- most recent version and the ones listed in the preferred-versions file of the hackage index .tar file 
-                    | TPCustom [a]
+                      -- most recent version and the ones listed in the preferred-versions file of the hackage index .tar file 
+                      -- String is a comment
+                    | TPMostRecentPreferred [a] String
+                      -- String is a comment 
+                    | TPCustom [a] String
   deriving (Show, Read)
 
 data TagType = TTNone
@@ -44,7 +47,7 @@ data Config = Config
 
 configErr value = error $ "missing configuration file value: " ++ value
 emptyConfig = Config (configErr "ghc tar file") Nothing (configErr "hackage index file")
-                     [] [] "" (TPMostRecentPreferred []) Nothing [] "" "" "" [] TTNone
+                     [] [] "" (TPMostRecentPreferred [] "") Nothing [] "" "" "" [] TTNone
 
 defaultConfigContents = unlines
   [ "ghc http://haskell.org/ghc/dist/6.10.1/ghc-6.10.1-src.tar.bz2 # url or sourceByName name"
@@ -93,8 +96,8 @@ parseConfig config =
         dropS n = dropSpaces . drop n
         parseTargetPackages :: TargetPackages String -> TargetPackages Dependency
         parseTargetPackages TPAll = TPAll
-        parseTargetPackages (TPMostRecentPreferred list) = TPMostRecentPreferred $ map sP list
-        parseTargetPackages (TPCustom list) = TPCustom $ map (fromJust . simpleParse) list
+        parseTargetPackages (TPMostRecentPreferred list comment) = TPMostRecentPreferred (map sP list) comment
+        parseTargetPackages (TPCustom list comment) = TPCustom (map (fromJust . simpleParse) list) comment
         sP x = case simpleParse x of
           Just a -> a
           Nothing -> error $ "could'n parse dependency information :" ++ x
