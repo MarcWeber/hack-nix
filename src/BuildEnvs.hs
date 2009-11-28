@@ -115,7 +115,7 @@ buildEnv envName = do
           pd <- parseCabalFileCurrentDir
           
           let PackageIdentifier (PackageName pName) version = package $ packageDescription pd
-              flagsStr = intercalate " " [ n ++ " = " ++ (if set then "true" else "false") ++ "; " | (n, set) <- flags]
+              flagsStr = intercalate " " [ "{ n = \"" ++ n ++ "\"; v =" ++ (if set then "true" else "false") ++ ";}" | (n, set) <- flags]
 
           cht <- asks createHaskellTags 
           let tagOptions = case cht of
@@ -133,9 +133,10 @@ buildEnv envName = do
                "let nixOverlay = import \"" ++ overlayRepo ++ "\" {};",
                "    lib = nixOverlay.lib;",
                "    pkgs = nixOverlay.pkgs;",
+               "    pkgFlags = lib.fold (a: n: a // n) {} (map ({n, v}: lib.attrSingleton n v) [" ++ flagsStr ++ " ]);",
                "    pkg = builtins.getAttr \"" ++ pName ++ "\" (nixOverlay.haskellOverlayPackagesFun.merge (args: args // {",
                "      targetPackages = [{ n = \"" ++ pName ++ "\"; v = \"99999\"; }];",
-               "      packageFlags = lib.attrSingleton \"" ++ pName ++ "-99999\" { " ++ flagsStr ++ " };",
+               "      packageFlags = lib.attrSingleton \"" ++ pName ++ "-99999\" pkgFlags;",
                "      packages = args.packages ++ [ (nixOverlay.libOverlay.pkgFromDb (import ./" ++ takeFileName thisPkgNixFile9 ++ ")) ];",
                "      debugS = true;",
                "    })).result;",
