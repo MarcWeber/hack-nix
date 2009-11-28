@@ -55,18 +55,22 @@ packageToNix = do
   (inH, outH, errH, p) <- liftIO $ runInteractiveProcess ("./"++setupE) ["sdist"] Nothing Nothing
   e <- liftIO $ liftM lines $ hGetContents outH
   ec <- liftIO $ waitForProcess p
-  case ec of
-    ExitFailure (ec) -> liftIO $ die $ "./[sS]etup sdist failed with exit code " ++ (show ec)
+  srcDistfile <- case ec of
+    ExitFailure (ec) -> do
+      liftIO $ hPutStrLn stderr $ "./[sS]etup sdist failed with exit code " ++ (show ec)
+      return $ "failure"
     ExitSuccess -> do
-      pwd <- liftIO $ getCurrentDirectory
       let pref = "Source tarball created: "
       let distFile = drop (length pref) $ head $ filter (pref `isPrefixOf`) e
-      nixT <- liftIO $ packageDescriptionToNix (STFile (pwd ++ "/" ++ distFile) ) $ pd
-      let pD = packageDescription $ pd
-      let (PackageIdentifier (PackageName name) version) = package pD
-      let nixFile = "dist/" ++ name ++ ".nix"
-      liftIO $ writeFile nixFile  (renderStyle style $ toDoc $ nixT)
-      return nixFile
+      pwd <- liftIO $ getCurrentDirectory
+      return $ pwd ++ "/" ++ distFile
+
+  nixT <- liftIO $ packageDescriptionToNix (STFile srcDistfile ) $ pd
+  let pD = packageDescription $ pd
+  let (PackageIdentifier (PackageName name) version) = package pD
+  let nixFile = "dist/" ++ name ++ ".nix"
+  liftIO $ writeFile nixFile  (renderStyle style $ toDoc $ nixT)
+  return $ nixFile
 
 
 buildEnv :: String -> ConfigR ()
