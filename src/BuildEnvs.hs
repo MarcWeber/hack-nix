@@ -140,7 +140,7 @@ buildEnv envName = do
                "    pkgFlags = lib.fold (a: n: a // n) {} (map ({n, v}: lib.attrSingleton n v) [" ++ flagsStr ++ " ]);",
                "    pkg = builtins.getAttr \"" ++ pName ++ "\" (nixOverlay.haskellOverlayPackagesFun.merge (args: args // {",
                "      targetPackages = [{ n = \"" ++ pName ++ "\"; v = \"99999\"; }];",
-               "      packageFlags = lib.attrSingleton \"" ++ pName ++ "-99999\" pkgFlags;",
+               "      packageFlags = args.packageFlags // lib.attrSingleton \"" ++ pName ++ "-99999\" pkgFlags;",
                "      packages = args.packages ++ [ (nixOverlay.libOverlay.pkgFromDb (import ./" ++ takeFileName thisPkgNixFile9 ++ ")) ];",
                "      debugS = true;",
                "    })).result;",
