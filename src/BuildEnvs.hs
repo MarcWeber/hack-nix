@@ -70,6 +70,7 @@ packageToNix = do
   let (PackageIdentifier (PackageName name) version) = package pD
   let nixFile = "dist/" ++ name ++ ".nix"
   liftIO $ writeFile nixFile  (renderStyle style $ toDoc $ nixT)
+  liftIO $ putStrLn nixFile
   return $ nixFile
 
 
@@ -162,5 +163,6 @@ buildEnv envName = do
                 "source " ++ envPath ++ "/source-me/haskell-env",
                 "# and configure",
                 "[ -e Setup ] || ghc --make Setup.hs",
+                "./Setup clean",
                 "./Setup configure --flags \"" ++ flagsStr' ++ "\" && ./Setup build "
               ]

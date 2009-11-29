@@ -85,7 +85,7 @@ createPatch fullName = do
   pf <- patchFile fullName
   liftIO $ do
     pfH <- openFile pf WriteMode
-    run (Just 1) "diff" ["-U", "3", src, wd] Nothing (Just pfH)
+    run (Just 1) "diff" ["-r", "-U", "3", src, wd] Nothing (Just pfH)
     hClose pfH
     run (Just 0) "sed" ["-i", "-e", "s@" ++ src ++ "@" ++ "a@g", pf ] Nothing Nothing
     run (Just 0) "sed" ["-i", "-e", "s@" ++ wd ++ "@" ++ "b@g", pf ] Nothing Nothing

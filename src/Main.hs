@@ -104,8 +104,8 @@ updateHackageIndexFile = do
     
     -- liftIO $ print indexContents
     attrs <- liftIO $ mapM (\(nr,b) -> do
-                let (PackageName name) = pkgName $ package $ packageDescription $ b
-                putStrLn $ "checking source of " ++ name  ++ "  " ++ show nr ++ "/" ++ (show . length ) allPkgs
+                let pd@(PackageName name) = pkgName $ package $ packageDescription $ b
+                putStrLn $ "checking source of " ++ (show pd)  ++ "  " ++ show nr ++ "/" ++ (show . length ) allPkgs
                 packageDescriptionToNix (if b `elem` parsedTestCabals then STNone else STHackage) b) $ zip [1 ..] $ targetPackages'
 
     tp <- asks targetPackages
