@@ -16,6 +16,7 @@ import System.IO
 import Distribution.PackageDescription
 import Distribution.Package
 
+-- writes ".hack-nix-cabal-config" sample file
 writeHackNixCabalConfig :: ConfigR ()
 writeHackNixCabalConfig = do
   -- never overwrite a config. Append instead 
@@ -39,7 +40,7 @@ writeHackNixCabalConfig = do
     hPutStrLn h $
       if null combinations then
         header ++ "default:\n"
-      else header ++ (unlines $ zipWith (\n flags -> n ++ ":" ++ flagsToString flags) names combinations)
+      else header ++ (unlines $ zipWith (\n flags -> n ++ ":" ++ show (defaultHaskellPackages, flagsToString flags)) names combinations)
     hClose h
 
   where flagsToString list =
@@ -79,26 +80,29 @@ buildEnv envName = do
   let readFlag ('-':envName) = (envName, False)
       readFlag envName = (envName, True)
       rmComments =  (filter (not . ("#" `isPrefixOf`)))
+      splitLine :: String -> Either String (String, String, [(String, Bool)], String)
       splitLine l = case break (== ':') l of
-        (envName, (':':flags)) -> Right (envName, (map readFlag . words) flags, flags)
-        r -> Left r
+        (envName, (':':flags)) ->
+          let (hP, flagsS) = read flags
+          in Right (envName, hP, (map readFlag . words) flagsS, flagsS)
+        r -> Left (show r)
 
   -- if file doesn't exist assume "default: contents
   de <- liftIO $ doesFileExist hackNixCabalConfig
   fc <- if de then
           liftIO $ liftM ( rmComments . lines) $ readFile hackNixCabalConfig
-        else return ["default:"]
+        else return ["default:(\"" ++ defaultHaskellPackages ++ "\",\"\")"]
 
   case filter ( (envName++":") `isPrefixOf`) fc of
     [] -> liftIO $ die $ unlines [
                  "configuration with envName " ++ envName ++ "not found in" ++ hackNixCabalConfig,
-                 "I know about these names: " ++ show [ envName | Right (envName, _, _)  <- map splitLine fc ]
+                 "I know about these names: " ++ show [ envName | Right (envName, _, _, _)  <- map splitLine fc ]
                 ]
     (h:x:_) -> liftIO $ die $ "envName " ++ envName ++ " is defined multiple times"
     (h:_) -> do
       case  splitLine h of
         Left s -> liftIO $ die $ "can't read config line: " ++ h ++ " result : " ++ show s
-        Right (envName, flags, flagsStr') -> do
+        Right (envName, haskellPackagesToUse, flags, flagsStr') -> do
 
           -- build dist file more important write .cabal file in a nix readable format: 
           thisPkgNixFile <- packageToNix
@@ -126,8 +130,8 @@ buildEnv envName = do
           let tagOptions = case cht of
                 TTNone -> ["         # no tags"]
                 TTVim  -> ["         createHaskellTagsFor = pkg.propagatedBuildInputs",
-                           "                              ++ [ (pkgs.haskellPackages.ghcReal // { srcDir = \"libraries compiler/main\"; })",
-                           "                                   (pkgs.haskellPackages.ghcReal // { srcDir = \"compiler/main\"; })",
+                           "                              ++ [ (pkgs." ++ haskellPackagesToUse ++ ".ghcReal // { srcDir = \"libraries compiler/main\"; })",
+                           "                                   (pkgs." ++ haskellPackagesToUse ++ ".ghcReal // { srcDir = \"compiler/main\"; })",
                            "                                 ];"
                          ]
                 TTEmacs ->["         # creating tags for Emacs is not supperted yet (FIXME)" ]
@@ -143,6 +147,7 @@ buildEnv envName = do
                "      targetPackages = [{ n = \"" ++ pName ++ "\"; v = \"99999\"; }];",
                "      packageFlags = args.packageFlags // lib.attrSingleton \"" ++ pName ++ "-99999\" pkgFlags;",
                "      packages = args.packages ++ [ (nixOverlay.libOverlay.pkgFromDb (import ./" ++ takeFileName thisPkgNixFile9 ++ ")) ];",
+               "      haskellPackages = pkgs." ++ haskellPackagesToUse ++ ";",
                "      debugS = true;",
                "    })).result;",
                "in {",

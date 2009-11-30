@@ -107,3 +107,6 @@ withConfig config f = (runReaderT f) config
  
 hackNixCabalConfig :: String
 hackNixCabalConfig = ".hack-nix-cabal-config" -- one definition 
+
+defaultHaskellPackages :: String
+defaultHaskellPackages = "haskellPackages"
