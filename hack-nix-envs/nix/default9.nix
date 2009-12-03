@@ -15,7 +15,6 @@
        {gte = "1.0";  n = "filepath";}
        {i1 = {gte = "1";};  i2 = {lt = "3";};  n = "network";}
        {i1 = {gte = "4000.0.2";};  i2 = {lt = "4001";};  n = "HTTP";}
-       {i1 = {gte = "0.4";};  i2 = {lt = "0.6";};  n = "zlib";}
      ];
    }];
   srcFile = "/pr/haskell/hack-nix/dist/hack-nix-0.1.1.tar.gz";

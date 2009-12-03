@@ -17,15 +17,9 @@ build-depends:     haskell98
                 , Cabal >= 1.5.1
                 , process
                 , mtl
-                , hslogger
-                , pretty,
-
-                 base >= 2 && < 5,
-                 Cabal >= 1.6 && < 1.7,
-                 filepath >= 1.0,
-                 network >= 1 && < 3,
-                 HTTP >= 4000.0.2 && < 4001,
-                 zlib >= 0.4 && < 0.6
+                , pretty
+                , base >= 2 && < 5
+                , filepath >= 1.0
 license:         BSD3
 
 executable:     hack-nix
