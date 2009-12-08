@@ -71,6 +71,7 @@ findSetup = do
     Nothing -> do
       mbSource <- findOneOfFiles ["Setup.lhs", "Setup.hs"]
       source <- case mbSource of
+        Just src -> return src
         Nothing -> do
           putStrLn "no setup file found. Couldn't find Setup.[l]hs either, create basic Setup.hs? [y]/.."
           c <- getChar

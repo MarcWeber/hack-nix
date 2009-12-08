@@ -1,4 +1,5 @@
 module BuildEnvs where
+import Data.Maybe
 import Control.Monad.Reader.Class
 import System.FilePath
 import Text.PrettyPrint
@@ -39,8 +40,8 @@ writeHackNixCabalConfig = do
   liftIO $ do
     hPutStrLn h $
       if null combinations then
-        header ++ "default:\n"
-      else header ++ (unlines $ zipWith (\n flags -> n ++ ":" ++ show (defaultHaskellPackages, flagsToString flags)) names combinations)
+        header ++ "default:[]\n"
+      else header ++ (unlines $ zipWith (\n flags -> n ++ ":" ++ show [("haskellPackages", defaultHaskellPackages),("flags", flagsToString flags)]) names combinations)
     hClose h
 
   where flagsToString list =
@@ -80,11 +81,11 @@ buildEnv envName = do
   let readFlag ('-':envName) = (envName, False)
       readFlag envName = (envName, True)
       rmComments =  (filter (not . ("#" `isPrefixOf`)))
-      splitLine :: String -> Either String (String, String, [(String, Bool)], String)
       splitLine l = case break (== ':') l of
-        (envName, (':':flags)) ->
-          let (hP, flagsS) = read flags
-          in Right (envName, hP, (map readFlag . words) flagsS, flagsS)
+        (envName, (':':options)) ->
+              let map' = read options
+                  flagsS = fromMaybe "" (lookup "flags" map')
+              in Right (envName, \s d-> fromMaybe d (lookup s map'), (map readFlag . words) flagsS, flagsS)
         r -> Left (show r)
 
   -- if file doesn't exist assume "default: contents
@@ -102,7 +103,7 @@ buildEnv envName = do
     (h:_) -> do
       case  splitLine h of
         Left s -> liftIO $ die $ "can't read config line: " ++ h ++ " result : " ++ show s
-        Right (envName, haskellPackagesToUse, flags, flagsStr') -> do
+        Right (envName, getOpt, flags, flagsStr') -> do
 
           -- build dist file more important write .cabal file in a nix readable format: 
           thisPkgNixFile <- packageToNix
@@ -125,6 +126,10 @@ buildEnv envName = do
           
           let PackageIdentifier (PackageName pName) version = package $ packageDescription pd
               flagsStr = intercalate " " [ "{ n = \"" ++ n ++ "\"; v =" ++ (if set then "true" else "false") ++ ";}" | (n, set) <- flags]
+              haskellPackagesToUse = getOpt "haskellPackages" "haskellPackages"
+              mergeWith = case getOpt "mergeWith" "" of
+                "" -> ""
+                file -> ".merge (import ../../" ++ file ++ ")"
 
           cht <- asks createHaskellTags 
           let tagOptions = case cht of
@@ -143,13 +148,13 @@ buildEnv envName = do
                "    lib = nixOverlay.lib;",
                "    pkgs = nixOverlay.pkgs;",
                "    pkgFlags = lib.fold (a: n: a // n) {} (map ({n, v}: lib.attrSingleton n v) [" ++ flagsStr ++ " ]);",
-               "    pkg = builtins.getAttr \"" ++ pName ++ "\" (nixOverlay.haskellOverlayPackagesFun.merge (args: args // {",
+               "    pkg = builtins.getAttr \"" ++ pName ++ "\" ((nixOverlay.haskellOverlayPackagesFun.merge (args: args // {",
                "      targetPackages = [{ n = \"" ++ pName ++ "\"; v = \"99999\"; }];",
                "      packageFlags = args.packageFlags // lib.attrSingleton \"" ++ pName ++ "-99999\" pkgFlags;",
                "      packages = args.packages ++ [ (nixOverlay.libOverlay.pkgFromDb (import ./" ++ takeFileName thisPkgNixFile9 ++ ")) ];",
                "      haskellPackages = pkgs." ++ haskellPackagesToUse ++ ";",
                "      debugS = true;",
-               "    })).result;",
+               "    }))" ++ mergeWith ++ ").result;",
                "in {",
                "      env = nixOverlay.envFromHaskellLibs {"
                ] ++ tagOptions ++ [
