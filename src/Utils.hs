@@ -69,16 +69,25 @@ findSetup = do
   setups <- findOneOfFiles ["setup","Setup"]
   case setups of
     Nothing -> do
-      source <- findOneOfFiles ["Setup.lhs", "Setup.hs"]
-      case source of
-        Nothing -> die "no setup file found. Couldn't find Setup.[l]hs either"
-        Just src -> do
-          putStrLn "[Ss]etup not found, copmile? y/[n]"
+      mbSource <- findOneOfFiles ["Setup.lhs", "Setup.hs"]
+      source <- case mbSource of
+        Nothing -> do
+          putStrLn "no setup file found. Couldn't find Setup.[l]hs either, create basic Setup.hs? [y]/.."
           c <- getChar
           if (c == 'y') then do
-              run (Just 0) "ghc" ["--make", src] Nothing Nothing
-              return "Setup"
-            else die "can't continue"
+              writeFile "Setup.hs" $ unlines [
+                    "module Main where"
+                  , "import Distribution.Simple"
+                  , "main = defaultMain"
+                  ]
+              return "Setup.hs"
+            else die "dying"
+      putStrLn "[Ss]etup not found, compile? y/[n]"
+      c <- getChar
+      if (c == 'y') then do
+          run (Just 0) "ghc" ["--make", source] Nothing Nothing
+          return "Setup"
+        else die "can't continue"
     Just setupE -> return setupE
 
 -- exits if command exitst with non zero exit status

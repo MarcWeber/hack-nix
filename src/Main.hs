@@ -133,6 +133,7 @@ updateHackageIndexFile = do
         Nothing -> return ()
 
 main = (flip finally) saveNixCache $ do
+  hSetBuffering stdin NoBuffering -- required because getChar is used to read y only
   loadNixCache
   dcp <- defaultConfigPath
   args <- getArgs

@@ -17,3 +17,5 @@ source hack-nix-envs/default/source-me/haskell-env
 
 
 Should this project be renamed to cabal2nix ?
+
+TODO  implement multithread support: ./Setup build +RTS -N4 -RTS
