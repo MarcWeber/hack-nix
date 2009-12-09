@@ -1,4 +1,7 @@
+{-# LANGUAGE ScopedTypeVariables #-}
 module BuildEnvs where
+import System.IO.Unsafe
+import Control.Exception
 import Data.Maybe
 import Control.Monad.Reader.Class
 import System.FilePath
@@ -83,7 +86,8 @@ buildEnv envName = do
       rmComments =  (filter (not . ("#" `isPrefixOf`)))
       splitLine l = case break (== ':') l of
         (envName, (':':options)) ->
-              let map' = read options
+              let -- grr 
+                  map' = unsafePerformIO $ handle (\(e::SomeException) -> error $ "error parsing options :" ++ options) $ return $ read options
                   flagsS = fromMaybe "" (lookup "flags" map')
               in Right (envName, \s d-> fromMaybe d (lookup s map'), (map readFlag . words) flagsS, flagsS)
         r -> Left (show r)
@@ -166,6 +170,7 @@ buildEnv envName = do
           nixFlags <- asks nixFlags
           liftIO $ do
             let envPath = (hackNixEnvs </> envName)
+            let buildDir = if envName == "default" then "" else "--builddir=dist" ++ envName
             run (Just 0) "nix-env" (["-p", envPath, "-iA", "env", "-f", nixFile, "--show-trace"] ++ nixFlags) Nothing Nothing 
             putStrLn $ unlines [
                 "success:",
@@ -174,5 +179,5 @@ buildEnv envName = do
                 "# and configure",
                 "[ -e Setup ] || ghc --make Setup.hs",
                 "./Setup clean",
-                "./Setup configure --flags \"" ++ flagsStr' ++ "\" && ./Setup build "
+                "./Setup configure " ++ buildDir ++ " --flags \"" ++ flagsStr' ++ "\" && ./Setup build " ++ buildDir
               ]
