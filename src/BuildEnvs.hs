@@ -96,11 +96,11 @@ buildEnv envName = do
   de <- liftIO $ doesFileExist hackNixCabalConfig
   fc <- if de then
           liftIO $ liftM ( rmComments . lines) $ readFile hackNixCabalConfig
-        else return ["default:(\"" ++ defaultHaskellPackages ++ "\",\"\")"]
+        else return ["default:[(\"haskellPackages\",\"" ++ defaultHaskellPackages ++ "\")]"]
 
   case filter ( (envName++":") `isPrefixOf`) fc of
     [] -> liftIO $ die $ unlines [
-                 "configuration with envName " ++ envName ++ "not found in" ++ hackNixCabalConfig,
+                 "configuration with envName " ++ envName ++ " not found in" ++ hackNixCabalConfig,
                  "I know about these names: " ++ show [ envName | Right (envName, _, _, _)  <- map splitLine fc ]
                 ]
     (h:x:_) -> liftIO $ die $ "envName " ++ envName ++ " is defined multiple times"
