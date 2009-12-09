@@ -73,6 +73,14 @@ writes a configuration file. Adjust it to your needs
   $ hack-nix --build-env base4
   $ . hack-nix-envs/base4/source-me
   $ ./Setup configure --builddir=distbase4
+
+
+
+fetching & updating darcs repositories automatically:
+========================================
+
+See http://github.com/MarcWeber/nix-repository-manager.
+Contact me if you have any questions.
   
 
 TAGS
