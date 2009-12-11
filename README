@@ -46,10 +46,10 @@ writes a configuration file. Adjust it to your needs
   Also note that different haskellPackages are used selecting different ghc versions.
 
     # real world .hack-nix-cabal-config example (Darcs)
-    base3:[("haskellPackages","haskellPackages"),("flags","curl -curl-pipelining http -static terminfo threaded -type-witnesses color mmap -test -hpc -deps-only"),("mergeBy","ways/base3.nix")]
-    base4:[("haskellPackages","haskellPackages"),("flags","curl -curl-pipelining http -static terminfo threaded -type-witnesses color mmap -test -hpc -deps-only"),("mergeBy","ways/base4.nix")]
-    682:[("haskellPackages","haskellPackages_ghc682"),("flags","curl -curl-pipelining http -static terminfo threaded -type-witnesses color mmap -test -hpc -deps-only"),("mergeBy","ways/base3.nix")]
-    683:[("haskellPackages","haskellPackages_ghc683"),("flags","curl -curl-pipelining http -static terminfo threaded -type-witnesses color mmap -test -hpc -deps-only"),("mergeBy","ways/base3.nix")]
+    base3:[("haskellPackages","haskellPackages"),("flags","curl -curl-pipelining http -static terminfo threaded -type-witnesses color mmap -test -hpc -deps-only"),("mergeWith","ways/base3.nix")]
+    base4:[("haskellPackages","haskellPackages"),("flags","curl -curl-pipelining http -static terminfo threaded -type-witnesses color mmap -test -hpc -deps-only"),("mergeWith","ways/base4.nix")]
+    682:[("haskellPackages","haskellPackages_ghc682"),("flags","curl -curl-pipelining http -static terminfo threaded -type-witnesses color mmap -test -hpc -deps-only"),("mergeWith","ways/base3.nix")]
+    683:[("haskellPackages","haskellPackages_ghc683"),("flags","curl -curl-pipelining http -static terminfo threaded -type-witnesses color mmap -test -hpc -deps-only"),("mergeWith","ways/base3.nix")]
 
   cat ways/base3.nix:
 

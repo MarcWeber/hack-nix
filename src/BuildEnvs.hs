@@ -174,10 +174,11 @@ buildEnv envName = do
             run (Just 0) "nix-env" (["-p", envPath, "-iA", "env", "-f", nixFile, "--show-trace"] ++ nixFlags) Nothing Nothing 
             putStrLn $ unlines [
                 "success:",
+                "",
                 "# source:",
                 "source " ++ envPath ++ "/source-me/haskell-env",
                 "# and configure",
                 "[ -e Setup ] || ghc --make Setup.hs",
-                "./Setup clean",
+                "./Setup clean " ++ buildDir,
                 "./Setup configure " ++ buildDir ++ " --flags \"" ++ flagsStr' ++ "\" && ./Setup build " ++ buildDir
               ]

@@ -6,23 +6,25 @@ maintainer:      Marc Weber <marco-oweber@gmx.de>
 description:     utility helping getting hackage packages into the nix package manager
 build-type:      Simple
 
-build-depends:     haskell98
-                 , base
-                 , directory
-                , containers
-                , network
-                , zlib, tar
-                , bytestring
-                , filepath
-                , Cabal >= 1.5.1
-                , process
-                , mtl
-                , pretty
-                , base >= 2 && < 5
-                , filepath >= 1.0
-license:         BSD3
 
-executable:     hack-nix
-main-is:        Main.hs
-hs-source-dirs: src
-ghc-options   : -Wall
+executable hack-nix
+
+  build-depends:    haskell98
+                  , base
+                  , directory
+                  , containers
+                  , network
+                  , zlib, tar
+                  , bytestring
+                  , filepath
+                  , Cabal >= 1.5.1
+                  , process
+                  , mtl
+                  , pretty
+                  , base >= 2 && < 5
+                  , filepath >= 1.0
+  license:         BSD3
+
+  main-is:        Main.hs
+  hs-source-dirs: src
+  ghc-options   : -Wall
