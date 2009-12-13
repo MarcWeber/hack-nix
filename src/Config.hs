@@ -66,7 +66,9 @@ defaultConfigContents = unlines
   , "create-haskell-tags TTVim # TTVim | TTEmacs | TTNone"
   ]
 
-writeSampleConfig = (flip writeFile) defaultConfigContents
+writeSampleConfig file = do
+  createDirectoryIfMissing True $ takeDirectory file
+  writeFile file defaultConfigContents
 
 formatInfo = error "TODO"
 
