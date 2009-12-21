@@ -182,3 +182,4 @@ buildEnv envName = do
                 "./Setup clean " ++ buildDir,
                 "./Setup configure " ++ buildDir ++ " --flags \"" ++ flagsStr' ++ "\" && ./Setup build " ++ buildDir
               ]
+            writeFile ("env-" ++ envName) $ "source " ++ envPath ++ "/source-me/haskell-env"
