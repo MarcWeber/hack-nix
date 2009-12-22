@@ -23,6 +23,7 @@ executable hack-nix
                   , pretty
                   , base >= 2 && < 5
                   , filepath >= 1.0
+                  , mtl
   license:         BSD3
 
   main-is:        Main.hs

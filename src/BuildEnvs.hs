@@ -172,14 +172,19 @@ buildEnv envName = do
             let envPath = (hackNixEnvs </> envName)
             let buildDir = if envName == "default" then "" else "--builddir=dist" ++ envName
             run (Just 0) "nix-env" (["-p", envPath, "-iA", "env", "-f", nixFile, "--show-trace"] ++ nixFlags) Nothing Nothing 
-            putStrLn $ unlines [
+            let configureLines = [
+                    "[ -e Setup ] || ghc --make Setup.hs",
+                    "./Setup clean " ++ buildDir,
+                    "./Setup configure " ++ buildDir ++ " --flags \"" ++ flagsStr' ++ "\" && ./Setup build " ++ buildDir
+                  ] 
+            putStrLn $ unlines $ [
                 "success:",
                 "",
                 "# source:",
                 "source " ++ envPath ++ "/source-me/haskell-env",
-                "# and configure",
-                "[ -e Setup ] || ghc --make Setup.hs",
-                "./Setup clean " ++ buildDir,
-                "./Setup configure " ++ buildDir ++ " --flags \"" ++ flagsStr' ++ "\" && ./Setup build " ++ buildDir
-              ]
-            writeFile ("env-" ++ envName) $ "source " ++ envPath ++ "/source-me/haskell-env"
+                "# and configure"
+              ] ++ configureLines
+
+            writeFile (envName ++ "-env") $ unlines $ [
+                  "source " ++ envPath ++ "/source-me/haskell-env"
+                  ] ++ map (\s -> "echo '" ++ s ++ "'") configureLines
