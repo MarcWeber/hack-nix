@@ -177,14 +177,20 @@ buildEnv envName = do
                     "./Setup clean " ++ buildDir,
                     "./Setup configure " ++ buildDir ++ " --flags \"" ++ flagsStr' ++ "\" && ./Setup build " ++ buildDir
                   ] 
+                quickSourceme = envName ++ "-env"
             putStrLn $ unlines $ [
                 "success:",
                 "",
                 "# source:",
                 "source " ++ envPath ++ "/source-me/haskell-env",
                 "# and configure"
-              ] ++ configureLines
+              ] ++ configureLines ++ [
+                "",
+                "you can source this env by running:",
+                ". ./" ++ quickSourceme
+              ]
 
-            writeFile (envName ++ "-env") $ unlines $ [
-                  "source " ++ envPath ++ "/source-me/haskell-env"
+            writeFile quickSourceme $ unlines $ [
+                    "source " ++ envPath ++ "/source-me/haskell-env",
+                    "echo 'You can copy paste and run:'"
                   ] ++ map (\s -> "echo '" ++ s ++ "'") configureLines
