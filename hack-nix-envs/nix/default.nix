@@ -1,4 +1,4 @@
-let nixOverlay = import "/pr/gitnixdev/haskell-nix-overlay" {};
+let nixOverlay = import "/home/haxe/haskell-nix-overlay" {};
     lib = nixOverlay.lib;
     pkgs = nixOverlay.pkgs;
     pkgFlags = lib.fold (a: n: a // n) {} (map ({n, v}: lib.attrSingleton n v) [ ]);

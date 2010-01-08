@@ -93,6 +93,12 @@ instance TypeToNix VersionRange where
                                 -- version only !)
   toNix (LaterVersion version) =  NixAttrs [] $ M.fromList [("gt", toNix version)]
   toNix (EarlierVersion version) = NixAttrs [] $ M.fromList [("lt", toNix version)]
+  -- encode wildarcd as version range
+  toNix (WildcardVersion (Version version _)) =
+		NixAttrs [] $ M.fromList [("i1", lower), ("i2", upper)]
+     where lower = NixAttrs [] $ M.fromList [("le", nixVersion $ init version ++ [1 + last version])]
+           upper = NixAttrs [] $ M.fromList [("gte", nixVersion version)]
+
 
   --  Build-Depends: base       >= 4 is represented as    (== 4) union (> 4) so rewrite this as greater or equal (gte)
   toNix (UnionVersionRanges v1 v2)
