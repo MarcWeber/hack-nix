@@ -111,4 +111,4 @@ hackNixCabalConfig :: String
 hackNixCabalConfig = ".hack-nix-cabal-config" -- one definition 
 
 defaultHaskellPackages :: String
-defaultHaskellPackages = "haskellPackages"
+defaultHaskellPackages = "nixOverlay.defaultHaskellPackages"

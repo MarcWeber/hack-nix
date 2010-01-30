@@ -130,7 +130,7 @@ buildEnv envName = do
           
           let PackageIdentifier (PackageName pName) version = package $ packageDescription pd
               flagsStr = intercalate " " [ "{ n = \"" ++ n ++ "\"; v =" ++ (if set then "true" else "false") ++ ";}" | (n, set) <- flags]
-              haskellPackagesToUse = getOpt "haskellPackages" "haskellPackages"
+              haskellPackagesToUse = getOpt "haskellPackages" defaultHaskellPackages
               mergeWith = case getOpt "mergeWith" "" of
                 "" -> ""
                 file -> ".merge (import ../../" ++ file ++ ")"
@@ -139,8 +139,8 @@ buildEnv envName = do
           let tagOptions = case cht of
                 TTNone -> ["         # no tags"]
                 TTVim  -> ["         createHaskellTagsFor = pkg.propagatedBuildInputs",
-                           "                              ++ [ (pkgs." ++ haskellPackagesToUse ++ ".ghcReal // { srcDir = \"libraries compiler/main\"; })",
-                           "                                   (pkgs." ++ haskellPackagesToUse ++ ".ghcReal // { srcDir = \"compiler/main\"; })",
+                           "                              ++ [ (" ++ haskellPackagesToUse ++ ".ghcReal // { srcDir = \"libraries compiler/main\"; })",
+                           "                                   (" ++ haskellPackagesToUse ++ ".ghcReal // { srcDir = \"compiler/main\"; })",
                            "                                 ];"
                          ]
                 TTEmacs ->["         # creating tags for Emacs is not supperted yet (FIXME)" ]
@@ -156,7 +156,7 @@ buildEnv envName = do
                "      targetPackages = [{ n = \"" ++ pName ++ "\"; v = \"99999\"; }];",
                "      packageFlags = args.packageFlags // lib.attrSingleton \"" ++ pName ++ "-99999\" pkgFlags;",
                "      packages = args.packages ++ [ (nixOverlay.libOverlay.pkgFromDb (import ./" ++ takeFileName thisPkgNixFile9 ++ ")) ];",
-               "      haskellPackages = pkgs." ++ haskellPackagesToUse ++ ";",
+               "      haskellPackages = " ++ haskellPackagesToUse ++ ";",
                "      debugS = true;",
                "    }))" ++ mergeWith ++ ").result;",
                "in {",
