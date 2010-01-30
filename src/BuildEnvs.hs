@@ -79,8 +79,9 @@ packageToNix = do
   return $ nixFile
 
 
-buildEnv :: String -> ConfigR ()
-buildEnv envName = do
+-- j is concurrency of nix-env command 
+buildEnv :: String -> [String] -> ConfigR ()
+buildEnv envName nixEnvArgs = do
   let readFlag ('-':envName) = (envName, False)
       readFlag envName = (envName, True)
       rmComments =  (filter (not . ("#" `isPrefixOf`)))
@@ -171,7 +172,7 @@ buildEnv envName = do
           liftIO $ do
             let envPath = (hackNixEnvs </> envName)
             let buildDir = if envName == "default" then "" else "--builddir=dist" ++ envName
-            run (Just 0) "nix-env" (["-p", envPath, "-iA", "env", "-f", nixFile, "--show-trace"] ++ nixFlags) Nothing Nothing 
+            run (Just 0) "nix-env" (["-p", envPath, "-iA", "env", "-f", nixFile, "--show-trace"] ++ nixEnvArgs ++ nixFlags) Nothing Nothing 
             let configureLines = [
                     "[ -e Setup ] || ghc --make Setup.hs",
                     "./Setup clean " ++ buildDir,
