@@ -1,10 +1,13 @@
-Name:            hack-nix
+name:            hack-nix
 version:         0.1.1
+license:         BSD3
 synopsis:        hackage to nix software distribution systrem
 category:        Utils
 maintainer:      Marc Weber <marco-oweber@gmx.de>
-description:     utility helping getting hackage packages into the nix package manager
 build-type:      Simple
+cabal-version:   >= 1.2
+description:
+  Utility helping getting hackage packages into the nix package manager.
 
 
 executable hack-nix
@@ -24,7 +27,6 @@ executable hack-nix
                   , base >= 2 && < 5
                   , filepath >= 1.0
                   , mtl
-  license:         BSD3
 
   main-is:        Main.hs
   hs-source-dirs: src
