@@ -139,7 +139,7 @@ buildEnv envName nixEnvArgs = do
           cht <- asks createHaskellTags 
           let tagOptions = case cht of
                 TTNone -> ["         # no tags"]
-                TTVim  -> ["         createHaskellTagsFor = pkg.propagatedBuildInputs",
+                TTVim  -> ["         createHaskellTagsFor = pkg.deps",
                            "                              ++ [ (" ++ haskellPackagesToUse ++ ".ghcReal // { srcDir = \"libraries compiler/main\"; })",
                            "                                   (" ++ haskellPackagesToUse ++ ".ghcReal // { srcDir = \"compiler/main\"; })",
                            "                                 ];"
@@ -163,7 +163,7 @@ buildEnv envName nixEnvArgs = do
                "in {",
                "      env = nixOverlay.envFromHaskellLibs {"
                ] ++ tagOptions ++ [
-               "         buildInputs = pkg.buildInputs ++ pkg.propagatedBuildInputs;",
+               "         buildInputs = pkg.buildInputs ++ pkg.deps;",
                "      };",
                "   }"
             ]
