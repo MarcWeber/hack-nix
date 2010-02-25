@@ -163,7 +163,7 @@ buildEnv envName nixEnvArgs = do
                "in {",
                "      env = nixOverlay.envFromHaskellLibs {"
                ] ++ tagOptions ++ [
-               "         buildInputs = pkg.buildInputs ++ pkg.deps;",
+               "         buildInputs = [ " ++ haskellPackagesToUse ++ ".ghc ] ++ pkg.buildInputs ++ pkg.deps;",
                "      };",
                "   }"
             ]
