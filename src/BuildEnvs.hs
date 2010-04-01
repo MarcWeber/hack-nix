@@ -174,7 +174,7 @@ buildEnv envName nixEnvArgs = do
             let buildDir = if envName == "default" then "" else "--builddir=dist" ++ envName
             run (Just 0) "nix-env" (["-p", envPath, "-iA", "env", "-f", nixFile, "--show-trace"] ++ nixEnvArgs ++ nixFlags) Nothing Nothing 
             let configureLines = [
-                    "[ -e Setup ] || ghc --make Setup.hs",
+                    "[ -e Setup ] || ghc --make Setup.*hs",
                     "./Setup clean " ++ buildDir,
                     "./Setup configure " ++ buildDir ++ " --flags \"" ++ flagsStr' ++ "\" && ./Setup build " ++ buildDir
                   ] 
