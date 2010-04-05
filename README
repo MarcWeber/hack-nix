@@ -76,6 +76,21 @@ writes a configuration file. Adjust it to your needs
 
 
 
+How to tell hack-nix about custom packages which are not yet on hackage? :
+==========================================================================
+
+You can always add additional packages to the pool of available packages by
+using a a way file like this:
+
+  ways/way-definining-additional-dependency-wash:
+
+  args: {
+    packageOverrides = args.packageOverrides ++ [ (import /pr/tasks/wash/WashNGo-2.12/dist/WashNGo.nix) ];
+  }
+
+  The dist/WashNGo.nix file is created by hack-nix --to-nix. This command also
+  creates a dist source file for you which is picked up by nix
+
 fetching & updating darcs repositories automatically:
 ========================================
 
