@@ -15,6 +15,6 @@ in {
                               ++ [ (nixOverlay.defaultHaskellPackages.ghcReal // { srcDir = "libraries compiler/main"; })
                                    (nixOverlay.defaultHaskellPackages.ghcReal // { srcDir = "compiler/main"; })
                                  ];
-         buildInputs = pkg.buildInputs ++ pkg.deps;
+         buildInputs = [ nixOverlay.defaultHaskellPackages.ghc ] ++ pkg.buildInputs ++ pkg.deps;
       };
    }
