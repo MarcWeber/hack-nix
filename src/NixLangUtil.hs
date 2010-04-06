@@ -182,6 +182,7 @@ hackageSrcUrl name versionStr =
 data SourceType =
     STHackage       -- get source from hackage. url is generated in nix code, only add hash
   | STFile FilePath -- use this file 
+  | STFetchUrl FilePath String -- file:// uri and sha256
   | STNone -- for testing only 
 
 packageDescriptionToNix :: SourceType -> GenericPackageDescription -> IO NixType
@@ -190,17 +191,25 @@ packageDescriptionToNix st (GenericPackageDescription packageDescription' genPac
   let versionNumbers = versionBranch version
   let versionStr = intercalate "." (map show versionNumbers)
   let url = hackageSrcUrl name versionStr
-  (_, hash) <- case st of
-       STHackage -> downloadCached url False
-       _ -> return (undefined, "not used")
+  srcAttrs <-
+     case st of
+        STHackage -> do
+          (_, hash) <- downloadCached url False
+          return  [("sha256", NixString hash)]
+
+        STFile file ->
+          return [("srcFile", NixString file)] -- be careful. Nix does not always recognize that this file has changed!
+
+        STFetchUrl url hash -> do
+          (_, hash) <- downloadCached url False
+          return [("sha256", NixString hash), ("url", NixString url)]
+
+        STNone -> return []
+
   return $ NixAttrs ["name", "version"] $ M.fromList $ [
         ("name", NixString name)
       , ("version", nixVersion versionNumbers)
-      ] ++ ( case st of
-        STHackage -> [("sha256", NixString hash)]
-        STFile file -> [("srcFile", NixString file)]
-        STNone -> []
-      )
+      ] ++ srcAttrs
       ++ (
       -- 450 flags: False
       -- 99  flags: True Okt 2009

@@ -70,7 +70,8 @@ packageToNix = do
       pwd <- liftIO $ getCurrentDirectory
       return $ pwd ++ "/" ++ distFile
 
-  nixT <- liftIO $ packageDescriptionToNix (STFile srcDistfile ) $ pd
+  -- TODO refactor. Add createFetchUrl src func or such 
+  nixT <- liftIO $ packageDescriptionToNix (STFetchUrl ("file://"++srcDistfile) (error "unsued")) $ pd
   let pD = packageDescription $ pd
   let (PackageIdentifier (PackageName name) version) = package pD
   let nixFile = "dist/" ++ name ++ ".nix"
