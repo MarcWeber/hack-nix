@@ -71,6 +71,8 @@ filterTargetPackages preferred packages = do
 runWithConfig :: String -> [String] -> IO ()
 runWithConfig cfg args =  do
   cfg <- liftM parseConfig $ readFile cfg
+  print "config is"
+  print cfg
   withConfig cfg $ do
     case args of
       [] -> updateHackageIndexFile

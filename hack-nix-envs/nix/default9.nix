@@ -14,5 +14,6 @@
        {gte = "1.0";  n = "filepath";}  {n = "mtl";}
      ];
    }];
-  srcFile = "/pr/haskell/hack-nix/dist/hack-nix-0.1.1.tar.gz";
+  sha256 = "0lwz4pk5rfryazmwsmnaprrx165wdl7hcyz3bczx521csksmhbah";
+  url = "file:///pr/haskell/hack-nix/dist/hack-nix-0.1.1.tar.gz";
 }
