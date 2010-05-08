@@ -58,7 +58,7 @@ defaultConfigContents = unlines
   , "all-packages.nix /etc/nixos/nixpkgs/pkgs/top-level/all-packages.nix"
   , "target-packages TPMostRecentPreferred [\"Cabal == 1.4.0.0\"] # additional list of non recent packages to be added"
   , "target-file Just \"result\" # where to write the result to. Addition"
-  , "test-cabal-files [\"tests/test.cabal\"] # this will be added to the package db. used by test cases"
+  , "test-cabal-files [] # [\"tests/test.cabal\"] this will be added to the package db. used by test cases"
   , "patch-directory \"path-to-nix-haskell-repo/patches\" # Path to nix-haskell-repo/patches"
   , "work-directory \"/tmp/work-directory\"   # source will be put into this directory so that you can write patches easily"
   , "haskell-nix-overlay \"path-to-nix-haskell-repo\" # Path to nix-haskell-repo/patches"
