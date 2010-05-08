@@ -62,7 +62,7 @@ defaultConfigContents = unlines
   , "patch-directory \"path-to-nix-haskell-repo/patches\" # Path to nix-haskell-repo/patches"
   , "work-directory \"/tmp/work-directory\"   # source will be put into this directory so that you can write patches easily"
   , "haskell-nix-overlay \"path-to-nix-haskell-repo\" # Path to nix-haskell-repo/patches"
-  , "nix-flags ["-j1", "-K"] # -j flag for nix-* commands or -K (keep build) flag"
+  , "nix-flags [\"-j1\", \"-K\"] # -j flag for nix-* commands or -K (keep build) flag"
   , "create-haskell-tags TTVim # TTVim | TTEmacs | TTNone"
   ]
 
