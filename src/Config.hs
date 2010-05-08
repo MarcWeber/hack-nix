@@ -52,7 +52,7 @@ emptyConfig = Config (configErr "ghc tar file") Nothing (configErr "hackage inde
 defaultConfigContents = unlines
   [ "ghc http://haskell.org/ghc/dist/6.10.1/ghc-6.10.1-src.tar.bz2 # url or sourceByName name"
   , "ghc-extra-libs http://haskell.org/ghc/dist/6.10.1/ghc-6.10.1-src-extralibs.tar.bz2 # url or archive"
-  , "hackage-index http://hackage.haskell.org/packages/archive/00-index.tar # url"
+  , "hackage-index \"http://hackage.haskell.org/packages/archive/00-index.tar\" # url"
   , "packages-dir mydir # can be given multiple times"
   , "patches-dir mypatchdir # can be given multiple times"
   , "all-packages.nix /etc/nixos/nixpkgs/pkgs/top-level/all-packages.nix"
@@ -80,7 +80,7 @@ parseConfig config =
           | isPrefixOf "all-packages.nix " l = cfg { allPackages = dropS (length "all-packages.nix") $ dropEOLComment l }
           | isPrefixOf "ghc " l = cfg { ghc = dropS 3 $ dropEOLComment l }
           | isPrefixOf "ghc-extra-libs " l = cfg { ghcExtraLibs = Just $ dropS (length "ghc-extra-libs") $ dropEOLComment l }
-          | isPrefixOf "hackage-index" l = cfg { hackageIndex = dropS (length "ghc-extra-libs") $ dropEOLComment l }
+          | isPrefixOf "hackage-index" l = cfg { hackageIndex = read $ dropS (length "ghc-extra-libs") $ dropEOLComment l }
           | isPrefixOf "packages-dir " l = cfg { packagesDir = [dropS (length "packages-dir") $ dropEOLComment l] ++ (packagesDir cfg)  }
           | isPrefixOf "patches-dir " l = cfg { patchesDir = [dropS (length "packges-dir") $ dropEOLComment l] ++ (patchesDir cfg) }
           | isPrefixOf "target-packages " l = cfg { targetPackages = parseTargetPackages $! read $! dropS (length "target-packages") $! dropEOLComment l }
