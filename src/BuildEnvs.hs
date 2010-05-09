@@ -57,7 +57,6 @@ packageToNix :: ConfigR FilePath
 packageToNix = do
   pd <- parseCabalFileCurrentDir
   setupE <- liftIO $ findSetup
-  liftIO $ print $ setupE ++ "<<"
   (inH, outH, errH, p) <- liftIO $ runInteractiveProcess ("./"++setupE) ["sdist"] Nothing Nothing
   e <- liftIO $ liftM lines $ hGetContents outH
   ec <- liftIO $ waitForProcess p
