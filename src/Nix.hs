@@ -1,3 +1,4 @@
+{-# OPTIONS -cpp #-}
 {-# OPTIONS_GHC -XScopedTypeVariables #-}
 -- uses the file .nix-cache to associate given urls with hash values 
 -- the .nix-cache file line fromat is
@@ -19,6 +20,9 @@ import System.Exit
 import Utils
 import qualified Data.ByteString.Lazy.Char8 as BL
 import qualified Data.ByteString.Char8 as BS
+
+#include "interlude.h"
+import Interlude
 
 {-# NOINLINE nixCache #-}
 nixCache :: IORef (M.Map String (String, String)) -- url (path, hash) 

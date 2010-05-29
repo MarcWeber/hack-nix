@@ -1,3 +1,4 @@
+{-# OPTIONS -cpp #-}
 {-# OPTIONS_GHC -XViewPatterns #-}
 module Index where
 import Data.Version

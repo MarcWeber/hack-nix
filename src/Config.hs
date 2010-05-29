@@ -1,3 +1,4 @@
+{-# OPTIONS -cpp #-}
 module Config where
 import System.Directory
 import System.FilePath
@@ -7,6 +8,9 @@ import Data.List
 import Distribution.Package
 import Distribution.Text
 import Control.Monad.Reader
+
+#include "interlude.h"
+import Interlude
 
 hacknixFile file = do
   fmap (</> ".hack-nix" </> file) getHomeDirectory

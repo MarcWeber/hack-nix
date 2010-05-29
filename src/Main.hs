@@ -1,3 +1,4 @@
+{-# OPTIONS -cpp #-}
 module Main where
 import Control.Monad.Reader.Class
 import Data.Function
@@ -28,6 +29,8 @@ import BuildEnvs
 import System.Process
 import System.IO
 
+#include "interlude.h"
+import Interlude
 
 -- writeConfig Map file = writeFile file $ lines $ mapWithKey
 
