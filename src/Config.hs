@@ -92,7 +92,7 @@ parseConfig config =
           | isPrefixOf "test-cabal-files " l = cfg { testCabals = read $ dropS (length "test-cabal-files") $ dropEOLComment l }
           | isPrefixOf "patch-directory" l = cfg { patchDirectory = read $ dropS (length "patch-directory") $ dropEOLComment l }
           | isPrefixOf "work-directory" l = cfg { workDirectory = read $ dropS (length "work-directory") $ dropEOLComment l }
-          | isPrefixOf "haskell-nix-overlay" l = cfg { haskellNixOverlay = read $ dropS (length "haskell-nix-overlay") $ dropEOLComment l }
+          | isPrefixOf "nixpkgs-haskell-overlay" l = cfg { haskellNixOverlay = read $ dropS (length "nixpkgs-haskell-overlay") $ dropEOLComment l }
           | isPrefixOf "nix-flags" l = cfg { nixFlags = read $ dropS (length "nix-flags") $ dropEOLComment l }
           | isPrefixOf "create-haskell-tags" l = cfg { createHaskellTags = read $ dropS (length "create-haskell-tags") $ dropEOLComment l }
           | otherwise = error $ "can't parse config line " ++ l
