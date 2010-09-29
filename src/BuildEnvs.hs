@@ -1,3 +1,4 @@
+{-# OPTIONS -cpp #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 module BuildEnvs where
 import System.IO.Unsafe
@@ -19,7 +20,9 @@ import Control.Monad.Trans
 import System.IO
 import Distribution.PackageDescription
 import Distribution.Package
-
+import Interlude
+import Prelude (read)
+#include "interlude.h"
 -- writes ".hack-nix-cabal-config" sample file
 writeHackNixCabalConfig :: ConfigR ()
 writeHackNixCabalConfig = do
@@ -65,8 +68,14 @@ packageToNix = do
       liftIO $ hPutStrLn stderr $ "./[sS]etup sdist failed with exit code " ++ (show ec)
       return $ "failure"
     ExitSuccess -> do
-      let pref = "Source tarball created: "
-      let distFile = drop (length pref) $ head $ filter (pref `isPrefixOf`) e
+      let pref = "Source tarball created:"
+      let distFile = case filter (pref `isPrefixOf`) e of
+            [] -> error "expected cabal outputting line starting with \"" ++ pref ++ "\""
+            x:xs -> case drop (length pref) x of
+                       -- dist file next line
+                       "" -> -- dist file next line
+                             head . drop 1 $ xs
+                       (' ':xs) -> xs
       pwd <- liftIO $ getCurrentDirectory
       return $ pwd ++ "/" ++ distFile
 
