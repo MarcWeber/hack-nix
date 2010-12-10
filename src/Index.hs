@@ -92,12 +92,13 @@ readIndex patchDirectory = filterFaulty . foldEntries fold emptyIndex undefined 
               else return cont
 
           toTuple d@(D.Dependency a _) = (a, [d])
-      in case splitDirectories path of
-        [ "preferred-versions" ] ->
-            index { preferredVersions = Map.fromListWith (\ a b -> nub (a ++ b)) $ map toTuple $ parsePreferredVersions asString' }
-        [ ".", name, version, _ ] ->
-            case parsePkgDescToEither (asString name version) of
+          parsePkgD name version = case parsePkgDescToEither (asString name version) of
                 Right (ws, a) -> index { packages = a:(packages index)
                                       , warnings = warnings index ++ path:ws }
                 Left error -> index { warnings = warnings index ++ [ path ++ " !! parsing failed, reason: " ++ error] }
+      in case splitDirectories path of
+        [ "preferred-versions" ] ->
+            index { preferredVersions = Map.fromListWith (\ a b -> nub (a ++ b)) $ map toTuple $ parsePreferredVersions asString' }
+        [ ".", name, version, _ ] -> parsePkgD name version
+        [ name, version, _ ] -> parsePkgD name version
         path -> error $ "unkown index path ? " ++ (show path)

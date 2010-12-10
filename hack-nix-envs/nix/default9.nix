@@ -14,6 +14,6 @@
        {gte = "1.0";  n = "filepath";}  {n = "mtl";}  {n = "interlude";}
      ];
    }];
-  sha256 = "1vrf2g8mg6wg0s57qfnn1sya5lpwdjr531glaww51hz4kq2c5ahh";
+  sha256 = "1lnp12b33xwwgjrzaj4jr883jyvmx9bcpmm0cbgmy0nifq4d8iqg";
   url = "file:///pr/haskell/hack-nix/dist/hack-nix-0.1.1.tar.gz";
 }
