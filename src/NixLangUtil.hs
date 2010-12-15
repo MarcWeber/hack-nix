@@ -96,7 +96,7 @@ instance TypeToNix VersionRange where
   -- encode wildarcd as version range
   toNix (WildcardVersion (Version version _)) =
 		NixAttrs [] $ M.fromList [("i1", lower), ("i2", upper)]
-     where lower = NixAttrs [] $ M.fromList [("le", nixVersion $ init version ++ [1 + last version])]
+     where lower = NixAttrs [] $ M.fromList [("lt", nixVersion $ init version ++ [1 + last version])]
            upper = NixAttrs [] $ M.fromList [("gte", nixVersion version)]
 
 
