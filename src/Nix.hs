@@ -30,16 +30,18 @@ nixCache = unsafePerformIO $ newIORef undefined
 
 loadNixCache :: IO ()
 loadNixCache = do
-  cacheFile <-  hashCacheFile
+  cacheFile <- hashCacheFile
   de <- doesFileExist cacheFile
   writeIORef nixCache . M.fromList =<< if de
-      then liftM (map read . lines ) $ readFile' cacheFile
+      then do
+        contents <- readFileLocked cacheFile
+        return $ (map read . lines ) contents
       else return []
 
 saveNixCache :: IO ()
 saveNixCache = do
     cacheFile <-  hashCacheFile
-    writeFile cacheFile . unlines . map show . M.toList =<< readIORef nixCache
+    writeFileLocked cacheFile . unlines . map show . M.toList =<< readIORef nixCache
 
 -- | downloads the url using nix-prefetch url and puts the (url , nix/store) path tuple into hashCacheFile 
 --  so that it only has to be fetched once

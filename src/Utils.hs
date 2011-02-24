@@ -11,6 +11,7 @@ import Distribution.Version
 import System.Exit
 import System.Process
 import System.IO
+import System.Posix.IO
 import System.Directory
 import Config
 import Distribution.PackageDescription
@@ -19,11 +20,6 @@ import Distribution.PackageDescription as PD
 import Distribution.Package as D
 import Distribution.Text
 import Distribution.Package
-
--- makes sure file is fully closed after reading
-readFile' :: FilePath -> IO String
-readFile' f = do s <- readFile f
-                 return $! (length s `seq` s)
 
 
 parseResultToEither :: PU.ParseResult a -> Either String ([String],a)
@@ -113,3 +109,26 @@ splitName :: String -> (String, String)
 splitName fullName =
     let (versionStrR,_:nameR) = break (== '-') $ reverse fullName
     in (reverse nameR, reverse versionStrR)
+
+withHandle fn mode lock withHandle = do
+    handle<- openFile fn mode
+    lockfd<- handleToFd handle -- closes handle
+    putStr $ "acquiring file lock on " ++ fn ++ " ... "
+    waitToSetLock lockfd (lock, AbsoluteSeek, 0, 0)
+    putStrLn $ "done"
+    r <- withHandle handle
+    putStrLn $ "releasing lock on " ++ fn
+    hClose handle
+    return r
+
+
+writeFileLocked :: FilePath -> String -> IO ()
+writeFileLocked fn c = do
+  withHandle fn WriteMode WriteLock $ \h ->
+    hPutStr h c
+
+readFileLocked :: FilePath -> IO String
+readFileLocked fn = do
+  withHandle fn ReadMode ReadLock $ \h -> do
+      s <- hGetContents h
+      return $! (length s `seq` s)

@@ -28,6 +28,7 @@ executable hack-nix
                   , filepath >= 1.0
                   , mtl
                   , interlude
+                  , unix
 
   main-is:        Main.hs
   hs-source-dirs: src

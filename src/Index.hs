@@ -88,7 +88,7 @@ readIndex patchDirectory = filterFaulty . foldEntries fold emptyIndex undefined 
                   let tmpFile = tmpDir </> name ++ ".cabal"
                   writeFile tmpFile cont
                   run Nothing "patch" ["-p1", "--batch", "-i", pf] (Just tmpDir) Nothing
-                  readFile' tmpFile
+                  readFileLocked tmpFile
               else return cont
 
           toTuple d@(D.Dependency a _) = (a, [d])
