@@ -24,24 +24,33 @@ import qualified Data.ByteString.Char8 as BS
 #include "interlude.h"
 import Interlude
 
+type Cache = (M.Map String (String, String)) -- url (path, hash) 
+
 {-# NOINLINE nixCache #-}
-nixCache :: IORef (M.Map String (String, String)) -- url (path, hash) 
+nixCache :: IORef Cache
 nixCache = unsafePerformIO $ newIORef undefined
+
+cacheContents :: IO Cache
+cacheContents = do
+  cacheFile <- hashCacheFile
+  de <- doesFileExist cacheFile
+  if de then do
+              contents <- readFileLocked cacheFile
+              return $ M.fromList $ map read $ lines $ contents
+        else return $ M.empty
 
 loadNixCache :: IO ()
 loadNixCache = do
-  cacheFile <- hashCacheFile
-  de <- doesFileExist cacheFile
-  writeIORef nixCache . M.fromList =<< if de
-      then do
-        contents <- readFileLocked cacheFile
-        return $ (map read . lines ) contents
-      else return []
+  writeIORef nixCache =<< cacheContents
 
 saveNixCache :: IO ()
 saveNixCache = do
+    -- merge in cache contents which another process may have written
+    -- this is still not perfect but probably good enough
+    c <- cacheContents
     cacheFile <-  hashCacheFile
-    writeFileLocked cacheFile . unlines . map show . M.toList =<< readIORef nixCache
+    this <- readIORef nixCache
+    writeFileLocked cacheFile $ unlines $ map show $ M.toList (M.union this c)
 
 -- | downloads the url using nix-prefetch url and puts the (url , nix/store) path tuple into hashCacheFile 
 --  so that it only has to be fetched once

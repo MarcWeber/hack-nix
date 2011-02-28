@@ -20,6 +20,7 @@ import Distribution.PackageDescription as PD
 import Distribution.Package as D
 import Distribution.Text
 import Distribution.Package
+import qualified Data.ByteString.Char8 as BS
 
 
 parseResultToEither :: PU.ParseResult a -> Either String ([String],a)
@@ -110,25 +111,27 @@ splitName fullName =
     let (versionStrR,_:nameR) = break (== '-') $ reverse fullName
     in (reverse nameR, reverse versionStrR)
 
-withHandle fn mode lock withHandle = do
+withHandle w fn mode lock doWithHandle = do
     handle<- openFile fn mode
     lockfd<- handleToFd handle -- closes handle
-    putStr $ "acquiring file lock on " ++ fn ++ " ... "
+    putStr $ "acquiring file for " ++ w ++ " lock on " ++ fn ++ " ... "
     waitToSetLock lockfd (lock, AbsoluteSeek, 0, 0)
     putStrLn $ "done"
-    r <- withHandle handle
+    handle2 <- fdToHandle lockfd
+    r <- doWithHandle handle2
     putStrLn $ "releasing lock on " ++ fn
-    hClose handle
+    hClose handle2
     return r
 
 
 writeFileLocked :: FilePath -> String -> IO ()
 writeFileLocked fn c = do
-  withHandle fn WriteMode WriteLock $ \h ->
+  withHandle "write" fn WriteMode WriteLock $ \h ->
     hPutStr h c
 
 readFileLocked :: FilePath -> IO String
 readFileLocked fn = do
-  withHandle fn ReadMode ReadLock $ \h -> do
-      s <- hGetContents h
-      return $! (length s `seq` s)
+  withHandle "read" fn ReadMode ReadLock $ \h -> do
+      -- read strict
+      s <- BS.hGetContents h
+      return $ BS.unpack s
