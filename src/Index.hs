@@ -129,8 +129,9 @@ readIndexTask cfg bs results tmpDir = Task PTTReadIndex "reading index" $ \newAc
 
   let packageToNix :: (String, Version, String) -> Task PTT String ()
       packageToNix (name,version,cabalStr) = Task PTTParse ("parsing " ++ name) $ \_ -> do
-      let fullName = name ++ "-" ++ show version
+      let fullName = name ++ "-" ++ display version
       let pf = patchDirectory cfg </> fullName ++ ".patch"
+
       e <- doesFileExist pf
       if e then newAction $ Task PTTPatch ("patching " ++ name) $ \_ -> do
                   let td = tmpDir </> fullName
