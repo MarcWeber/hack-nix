@@ -125,7 +125,6 @@ TODO
 * Get more users to fix bugs and help mantain this all
 * support emacs tags
 * support haddock
-* check that profiling options are passed to gtk2hs etc as well
 * make the ruby bindings library use shared libs.
 * implement multithread support: `./Setup build +RTS -N4 -RTS`
 * Should this project be renamed to cabal2nix ?
