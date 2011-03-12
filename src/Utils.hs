@@ -1,5 +1,7 @@
 {-# OPTIONS_GHC -XNoMonomorphismRestriction #-}
 module Utils where
+import GHC.Read
+import qualified Text.ParserCombinators.ReadPrec as RP
 import Data.Maybe
 import Control.Monad.Reader.Class
 import Distribution.ParseUtils as PU
@@ -21,6 +23,7 @@ import Distribution.Package as D
 import Distribution.Text
 import Distribution.Package
 import qualified Data.ByteString.Char8 as BS
+import System.FilePath
 
 
 parseResultToEither :: PU.ParseResult a -> Either String ([String],a)
@@ -111,6 +114,12 @@ splitName fullName =
     let (versionStrR,_:nameR) = break (== '-') $ reverse fullName
     in (reverse nameR, reverse versionStrR)
 
+withHandle :: [Char]
+              -> FilePath
+              -> IOMode
+              -> LockRequest
+              -> (Handle -> IO b)
+              -> IO b
 withHandle w fn mode lock doWithHandle = do
     handle<- openFile fn mode
     lockfd<- handleToFd handle -- closes handle
@@ -135,3 +144,28 @@ readFileLocked fn = do
       -- read strict
       s <- BS.hGetContents h
       return $ BS.unpack s
+
+-- race condition - I don't care
+newTempdir :: String -> IO FilePath
+newTempdir prefix = do
+  tmp <- getTemporaryDirectory
+  let find' i = do
+        let n = tmp </> (prefix ++ show i)
+        de <- doesDirectoryExist n
+        if de then find' (i+1)
+              else return n
+  tmpDir <- find' 0
+  de <- doesDirectoryExist tmpDir
+  when (not de) $ createDirectoryIfMissing True tmpDir
+  return tmpDir
+
+maybeRead :: Read a => String -> Maybe a
+maybeRead s =
+  case [ x | (x,"") <- RP.readPrec_to_S read' RP.minPrec s ] of
+    [x] -> Just x
+    []  -> Nothing
+    _   -> Nothing
+ where
+  read' =
+    do x <- readPrec
+       return x

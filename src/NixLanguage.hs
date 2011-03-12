@@ -52,7 +52,7 @@ data NixType = NixString String
             | NixVerb String
             | NixFunction String NixType -- string : function body
             | NixApply String [NixType] -- name args
-  deriving (Eq)
+  deriving (Eq,Ord)
 
 nixEq, nixAnd, nixOr :: NixType -> NixType -> NixType
 nixEq = NixOp "=="

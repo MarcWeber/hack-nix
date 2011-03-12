@@ -185,7 +185,6 @@ data SourceType =
   | STFetchUrl FilePath String -- file:// uri and sha256
   | STNone -- for testing only 
 
-packageDescriptionToNix :: SourceType -> GenericPackageDescription -> IO NixType
 packageDescriptionToNix st (GenericPackageDescription packageDescription' genPackageFlags' condLibrary' condExecutables') = do
   let PackageIdentifier (PackageName name) version = package packageDescription'
   let versionNumbers = versionBranch version

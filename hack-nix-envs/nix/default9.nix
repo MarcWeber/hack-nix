@@ -12,6 +12,7 @@
        {n = "pretty";}
        {i1 = {gte = "2";};  i2 = {lt = "5";};  n = "base";}
        {gte = "1.0";  n = "filepath";}  {n = "mtl";}  {n = "interlude";}
+       {n = "unix";}
      ];
    }];
   sha256 = "1lnp12b33xwwgjrzaj4jr883jyvmx9bcpmm0cbgmy0nifq4d8iqg";
