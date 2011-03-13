@@ -32,14 +32,11 @@ printProgress :: (Show label)
                     -> Int -- running
                     -> Int -- to be run
                     -> IO ()
-printProgress change _ label finished_c running_c to_be_run_c =
-  let action = case change of
-                  TSCStarted -> "started: "
-                  TSCStopped -> "finished: "
-                  TSCTaskAdded -> "scheduled: "
-      total = finished_c + running_c + to_be_run_c
+printProgress TSCStarted _ label finished_c running_c to_be_run_c =
+  let total = finished_c + running_c + to_be_run_c
       fi :: (Int -> Double) = fromIntegral
-  in printf "==> %s %s  %d of %d  %.2f %% running: %d\n" action (show label) to_be_run_c total (((/) `on` fi) (100 * (total - to_be_run_c)) total) running_c
+  in printf "==> %s %s  %d of %d  %.2f %% running: %d\n" "started: " (show label) to_be_run_c total (((/) `on` fi) (100 * (total - to_be_run_c)) total) running_c
+printProgress _ _ _ _ _ _ = return ()
 
 
 -- tt = task type

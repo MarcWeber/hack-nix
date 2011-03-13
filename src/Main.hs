@@ -69,7 +69,7 @@ updateHackageIndexFile tmpDir = do
 
     (sortedResults :: MVar (M.Map NixType NixType)) <- liftIO $ newMVar M.empty
     dummy <- liftIO $ runConcurrently (maxConc cfg)
-                forkIO printNoProgress
+                forkIO printProgress
                 [readIndexTask cfg indexContents sortedResults tmpDir]
 
     -- wait for processes
