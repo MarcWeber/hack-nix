@@ -56,10 +56,8 @@ saveNixCache = do
 --  so that it only has to be fetched once
 --  could have used (url,hash), but I was to lazy to look the path up...
 downloadCached :: String -> Bool -> IO (String, String) -- (storepath, hash) 
-downloadCached url ignoreCached = do
-  p <- if ignoreCached
-      then return Nothing
-      else liftM (M.lookup url) $ readIORef nixCache
+downloadCached url forceStorePath = do
+  p <- liftM (M.lookup url) $ readIORef nixCache
 
   let retrieve = do 
         putStr $ "retrieving " ++ url ++ " using nix-prefetch-url ..  \n\n"
@@ -79,7 +77,10 @@ downloadCached url ignoreCached = do
               return (storePath, hash)
 
   case p of
-    Just t -> return $ t
+    Just t@(p,_) -> do
+      de <- doesExist p
+      if de then return t
+            else retrieve
     Nothing -> retrieve
 
 doesExist p = liftM2 (||) (doesDirectoryExist p) (doesFileExist p)

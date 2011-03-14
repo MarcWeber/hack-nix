@@ -43,7 +43,7 @@ nixStoreSrcDir fullName =
   let (name, version) = splitName fullName
       url = hackageSrcUrl name version
   in do
-    (p,_) <- liftIO $ downloadCached url False
+    (p,_) <- liftIO $ downloadCached url True
     unpack p
 
 

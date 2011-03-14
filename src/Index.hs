@@ -5,6 +5,7 @@ import NixLanguage
 import Distribution.Version
 import Data.Function
 import Control.Concurrent
+import Control.Monad
 import ProcessPool
 import NixLangUtil
 import Config
@@ -120,9 +121,10 @@ readIndexTask cfg bs results tmpDir = Task PTTReadIndex "reading index" $ \newAc
   let strToNix name s =
         -- TODO: make this strict so that the work is done in threads !?
         case parsePkgDescToEither s of
-          Left errs -> putStrLn $ "error parsing cabal file " ++ name ++ ":\n" ++ errs
+          Left errs -> error $ "error parsing cabal file " ++ name ++ ":\n" ++ errs
           Right (ws, pd) -> do
-            putStrLn $ "warnings parsing cabal file " ++ name ++ ":\n" ++ unlines ws
+            when ((not . null) ws) $
+              putStrLn $ "warnings parsing cabal file " ++ name ++ ":\n" ++ unlines ws
             -- create download tasks ?
             p <- packageDescriptionToNix STHackage pd
             modifyMVar_ results $ return . Map.insert p p
