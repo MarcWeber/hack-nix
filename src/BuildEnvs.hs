@@ -152,8 +152,8 @@ buildEnv envName nixEnvArgs = do
           let tagOptions = case cht of
                 TTNone -> ["         # no tags"]
                 TTVim  -> ["         createHaskellTagsFor = pkg.deps",
-                           "                              ++ [ (" ++ haskellPackagesToUse ++ ".ghcReal // { srcDir = \"libraries compiler/main\"; })",
-                           "                                   (" ++ haskellPackagesToUse ++ ".ghcReal // { srcDir = \"compiler/main\"; })",
+                           "                              ++ [ (" ++ haskellPackagesToUse ++ ".ghcPlain // { srcDir = \"libraries compiler/main\"; })",
+                           "                                   (" ++ haskellPackagesToUse ++ ".ghcPlain // { srcDir = \"compiler/main\"; })",
                            "                                 ];"
                          ]
                 TTEmacs ->["         # creating tags for Emacs is not supperted yet (FIXME)" ]
