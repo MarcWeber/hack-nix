@@ -67,7 +67,11 @@ packageToNix = do
   srcDistfile <- case ec of
     ExitFailure (ec') -> do
       liftIO $ hPutStrLn stderr $ "./[sS]etup sdist failed with exit code " ++ (show ec')
-      return $ "failure"
+      -- should fail. This hack exists only becauese of Yi.
+      cwd <- liftIO $ getCurrentDirectory
+      let f = cwd </> "dist/failure.txt" 
+      liftIO $ writeFile f "failed creating dist tar using ./Setup sdist"
+      return f
     ExitSuccess -> do
       let pref = "Source tarball created:"
       let distFile = case filter (pref `isPrefixOf`) e of
