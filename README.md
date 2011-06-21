@@ -1,7 +1,7 @@
 hack-nix
 ========
 
-Hack-nix is the tool used by [haskell-nix-overley](http://github.com/MarcWeber/haskell-nix-overlay) to get hackage contents putting them into a .nix file which is read by the cabal dependency resolver written in the nix language itself.
+Hack-nix is the tool used by [haskell-nix-overley](http://github.com/MarcWeber/nixpkgs-haskell-overlay) to get hackage contents putting them into a .nix file which is read by the cabal dependency resolver written in the nix language itself.
 
 HOWTO BOOTSTRAP?
 ================
