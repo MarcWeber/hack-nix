@@ -102,6 +102,12 @@ filterTargetPackages targetPackages' preferred' packages' = do
         ++ (latest (elected (fromMaybe [] (Map.lookup name preferred')) ps)) -- preferred. This list is contained in hackage index. Only keep latest
       TPCustom deps _ -> nub $ elected deps ps
 
+dumpIndex :: BL.ByteString -> IO ()
+dumpIndex bs = Tar.foldEntries next (return ()) fail $ (Tar.read) $ decompress bs
+  where
+    next e a = a >> (putStrLn $ Tar.entryPath $ e)
+    fail s = putStrLn $ "tar error: " ++ s
+
 
 
 -- first task starting more tasks

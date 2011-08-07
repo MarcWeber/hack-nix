@@ -1,6 +1,10 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# OPTIONS -cpp #-}
 module Main where
+import Codec.Compression.GZip(decompress)
+import Codec.Archive.Tar as T
+
+
 import Control.Monad.Reader.Class
 import Control.Concurrent
 import Data.Function
@@ -56,7 +60,15 @@ runWithConfig tmpDir cfg args =  do
       ["--write-hack-nix-cabal-config"] -> writeHackNixCabalConfig
       ("--build-env":args') -> buildEnv "default" args' -- assume default
       ("--build-env-name": name: args') -> buildEnv name args'
+      ["--dump-hackage-db"] -> dumpHackageDB
       _ -> liftIO $ help >> exitWith (ExitFailure 1)
+
+dumpHackageDB :: ConfigR ()
+dumpHackageDB = do
+    cfg <- ask
+    liftIO $ do
+      (hackageIndex', _) <- downloadCached (hackageIndex cfg) False
+      dumpIndex =<< BL.readFile hackageIndex'
 
 updateHackageIndexFile :: FilePath -> ConfigR ()
 updateHackageIndexFile tmpDir = do
@@ -157,5 +169,9 @@ help = do
           , "                                containing all variations of flags"
           , " --build-env  [nix-env options]         : build default env"
           , " --build-env-name name [nix-env options]: build env named name"
+          , ""
+          , "  querying  hackgae db dump (cause I don't trust the web interface ..)"
+          , "  ========================================"
+          , " --dump-hackage-db"
           ]
 
