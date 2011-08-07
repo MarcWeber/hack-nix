@@ -12,8 +12,8 @@ let nixOverlay = import "/pr/gitnixdev/nixpkgs-haskell-overlay" {};
 in {
       env = nixOverlay.envFromHaskellLibs {
          createHaskellTagsFor = pkg.deps
-                              ++ [ (nixOverlay.defaultHaskellPackages.ghcReal // { srcDir = "libraries compiler/main"; })
-                                   (nixOverlay.defaultHaskellPackages.ghcReal // { srcDir = "compiler/main"; })
+                              ++ [ (nixOverlay.defaultHaskellPackages.ghcPlain // { srcDir = "libraries compiler/main"; })
+                                   (nixOverlay.defaultHaskellPackages.ghcPlain // { srcDir = "compiler/main"; })
                                  ];
          buildInputs = [ nixOverlay.defaultHaskellPackages.ghc ] ++ pkg.buildInputs ++ pkg.deps;
       };

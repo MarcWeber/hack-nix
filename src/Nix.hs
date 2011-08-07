@@ -27,7 +27,11 @@ import Interlude
 type Cache = (M.Map String (String, String)) -- url (path, hash) 
 
 {-# NOINLINE nixCache #-}
-nixCache :: IORef Cache
+
+nixCache, nixCacheRead :: IORef Cache
+-- this is uset to find out whether the cache has been changed
+nixCacheRead = unsafePerformIO $ newIORef undefined
+-- the cache keeping hashes
 nixCache = unsafePerformIO $ newIORef undefined
 
 cacheContents :: IO Cache
@@ -41,16 +45,20 @@ cacheContents = do
 
 loadNixCache :: IO ()
 loadNixCache = do
-  writeIORef nixCache =<< cacheContents
+  cc <- cacheContents
+  writeIORef nixCache cc
+  writeIORef nixCacheRead cc
 
 saveNixCache :: IO ()
 saveNixCache = do
-    -- merge in cache contents which another process may have written
-    -- this is still not perfect but probably good enough
-    c <- cacheContents
-    cacheFile <-  hashCacheFile
+    r <- readIORef nixCacheRead
     this <- readIORef nixCache
-    writeFileLocked cacheFile $ unlines $ map show $ M.toList (M.union this c)
+    when (r /= this) $ do
+        -- merge in cache contents which another process may have written
+        -- this is still not perfect but probably good enough
+        c <- cacheContents
+        cacheFile <-  hashCacheFile
+        writeFileLocked cacheFile $ unlines $ map show $ M.toList (M.union this c)
 
 -- | downloads the url using nix-prefetch url and puts the (url , nix/store) path tuple into hashCacheFile 
 --  so that it only has to be fetched once

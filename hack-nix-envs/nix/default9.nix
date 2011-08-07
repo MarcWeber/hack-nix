@@ -15,6 +15,6 @@
        {n = "unix";}
      ];
    }];
-  sha256 = "1lnp12b33xwwgjrzaj4jr883jyvmx9bcpmm0cbgmy0nifq4d8iqg";
-  url = "file:///pr/haskell/hack-nix/dist/hack-nix-0.1.1.tar.gz";
+  sha256 = "0ywh4pc8pqj1j0pzz7hk15p2957nhbc69vd82wxn11n0z243d8ir";
+  url = "file:///pr/haskell/hack-nix/dist/failure.txt";
 }
