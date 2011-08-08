@@ -173,7 +173,7 @@ data SourceType =
   | STFetchUrl FilePath String -- file:// uri and sha256
   | STNone -- for testing only 
 
-packageDescriptionToNix st (GenericPackageDescription packageDescription' genPackageFlags' condLibrary' condExecutables') = do
+packageDescriptionToNix st (GenericPackageDescription packageDescription' genPackageFlags' condLibrary' condExecutables' condTestSuites) = do
   let PackageIdentifier (PackageName name) version = package packageDescription'
   let versionNumbers = versionBranch version
   let versionStr = intercalate "." (map show versionNumbers)

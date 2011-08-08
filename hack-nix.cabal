@@ -20,7 +20,8 @@ executable hack-nix
                   , zlib, tar
                   , bytestring
                   , filepath
-                  , Cabal >= 1.5.1
+                  -- Cabal >= 1.8.0.6 introduce GenericPackageDescription field condTestSuites
+                  , Cabal >= 1.8.0.6
                   , process
                   , mtl
                   , pretty

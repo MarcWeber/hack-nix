@@ -6,15 +6,15 @@ let nixOverlay = import "/pr/gitnixdev/nixpkgs-haskell-overlay" {};
       targetPackages = [{ n = "hack-nix"; v = "99999"; }];
       packageFlags = args.packageFlags // lib.attrSingleton "hack-nix-99999" pkgFlags;
       packages = args.packages ++ [ (nixOverlay.libOverlay.pkgFromDb (import ./default9.nix)) ];
-      haskellPackages = nixOverlay.defaultHaskellPackages;
+      haskellPackages = pkgs.haskellPackages_ghc703;
       debugS = true;
     }))).result;
 in {
       env = nixOverlay.envFromHaskellLibs {
          createHaskellTagsFor = pkg.deps
-                              ++ [ (nixOverlay.defaultHaskellPackages.ghcPlain // { srcDir = "libraries compiler/main"; })
-                                   (nixOverlay.defaultHaskellPackages.ghcPlain // { srcDir = "compiler/main"; })
+                              ++ [ (pkgs.haskellPackages_ghc703.ghcPlain // { srcDir = "libraries compiler/main"; })
+                                   (pkgs.haskellPackages_ghc703.ghcPlain // { srcDir = "compiler/main"; })
                                  ];
-         buildInputs = [ nixOverlay.defaultHaskellPackages.ghc ] ++ pkg.buildInputs ++ pkg.deps;
+         buildInputs = [ pkgs.haskellPackages_ghc703.ghc ] ++ pkg.buildInputs ++ pkg.deps;
       };
    }
