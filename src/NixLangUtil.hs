@@ -117,6 +117,9 @@ instance TypeToNix VersionRange where
 
   toNix (IntersectVersionRanges v1 v2) = NixAttrs [] $ M.fromList [("i1", toNix v1), ("i2", toNix v2)]
 
+  --  because toNix always returns NixAttrs we don't have to care about parenthesis.
+  toNix (VersionRangeParens v) = toNix v
+
 
 instance (TypeToNix a, TypeToNix b, TypeToNix c) => TypeToNix (a,b,Maybe c) where
   toNix (a,b,c) = NixList $ [ toNix a, toNix b ] ++ case c of
