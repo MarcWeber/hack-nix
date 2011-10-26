@@ -1,6 +1,12 @@
 hack-nix
 ========
 
+NOTE: Eelco recently explained that it is possible to depend on outputs of derivations.
+Thus the whole design of hack-nix should change:
+The solver should be rewritten in Haskell and be run.
+Still patching should be allowed.
+
+
 Hack-nix is the tool used by [haskell-nix-overley](http://github.com/MarcWeber/nixpkgs-haskell-overlay) to get hackage contents putting them into a .nix file which is read by the cabal dependency resolver written in the nix language itself.
 
 HOWTO BOOTSTRAP?

@@ -85,10 +85,17 @@ createPatch fullName = do
   pf <- patchFile fullName
   liftIO $ do
     pfH <- openFile pf WriteMode
-    run (Just 1) "diff" ["-r", "-U", "3", src, wd] Nothing (Just pfH)
+    run Nothing "diff" ["-r", "-U", "3", src, wd] Nothing (Just pfH)
     hClose pfH
-    run (Just 0) "sed" ["-i", "-e", "s@" ++ src ++ "@" ++ "a@g", pf ] Nothing Nothing
-    run (Just 0) "sed" ["-i", "-e", "s@" ++ wd ++ "@" ++ "b@g", pf ] Nothing Nothing
+    putStrLn "PATCH is:"
+    putStrLn =<< readFile pf
+    putStrLn "keep ? y/[n].Not entering y will remove the patch file"
+    r <- getLine
+    if (r /= "y") 
+      then removeFile pf
+      else do
+        run (Just 0) "sed" ["-i", "-e", "s@" ++ src ++ "@" ++ "a@g", pf ] Nothing Nothing
+        run (Just 0) "sed" ["-i", "-e", "s@" ++ wd ++ "@" ++ "b@g", pf ] Nothing Nothing
 
 patchWorkflow :: String -> ConfigR () -> ConfigR ()
 patchWorkflow fullName recreateHackNixFile = do

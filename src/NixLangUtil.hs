@@ -150,6 +150,13 @@ instance TypeToNix Executable where
 instance TypeToNix Library where
   toNix _ = NixString "library"
 
+instance TypeToNix TestSuite where
+  toNix ts = NixAttrs [] $ M.fromList [
+            ("testName", NixString (testName ts))
+          , ("testEnabled", NixBool (testEnabled ts))
+          , ("testBuildable", NixBool ((buildable . testBuildInfo) ts)) 
+          ]
+
 -- special instance for flag names 
 instance TypeToNix (Condition String) where
   -- strip this "var" to save some bytes, the "os", "arch", "flag", "compilerFlavor" names are uniq enough
@@ -176,7 +183,7 @@ data SourceType =
   | STFetchUrl FilePath String -- file:// uri and sha256
   | STNone -- for testing only 
 
-packageDescriptionToNix st (GenericPackageDescription packageDescription' genPackageFlags' condLibrary' condExecutables' condTestSuites) = do
+packageDescriptionToNix st (GenericPackageDescription packageDescription' genPackageFlags' condLibrary' condExecutables' condTestSuites') = do
   let PackageIdentifier (PackageName name) version = package packageDescription'
   let versionNumbers = versionBranch version
   let versionStr = intercalate "." (map show versionNumbers)
@@ -215,3 +222,5 @@ packageDescriptionToNix st (GenericPackageDescription packageDescription' genPac
       ++ (fromMaybe [] (fmap (\x -> [("ldeps", toNix x)]) condLibrary'))
       -- dependencies of executables
       ++ [("edeps", (toNix . map snd) condExecutables')]
+
+      ++ [("tsdeps", (toNix . map snd) condTestSuites')]
