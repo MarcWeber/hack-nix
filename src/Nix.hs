@@ -71,6 +71,9 @@ downloadCached url forceStorePath = do
         putStr $ "retrieving " ++ url ++ " using nix-prefetch-url ..  \n\n"
         (inH, outH, errH, p) <- runInteractiveProcess "nix-prefetch-url" [url] Nothing Nothing
         e <- hGetContents errH
+        out <- hGetContents outH
+        -- bad: force reading:
+        putStrLn out
         putStrLn e
         ec <- waitForProcess p
         putStrLn "done"
@@ -78,9 +81,12 @@ downloadCached url forceStorePath = do
           ExitFailure _ -> error $ "nix-prefetch-url could not download '" ++ url ++ "' cause :\n" ++ e
           _ -> do
               hClose outH -- we don't need the contents 
-              let asWords = (map words . lines) e 
+              let asWords = (map words . lines) (e  ++ "\n" ++ out)
               let (storePath :: String) = head [s | ("path":"is":s:_) <- asWords ]
-              let (hash :: String) = head [s | ("hash":"is":s:_) <- asWords ]
+              let (hash :: String) = case [s | ("hash":"is":s:_) <- asWords ] of
+                                          [x] -> x
+                                          [] -> last $ last asWords
+              when (not $ (all (`elem` (['0'..'9'] ++ ['a'..'z'] ++ [ 'A'..'Z']))) hash) $ error $ "bad hash: " ++ hash ++ " words :" ++ (show asWords)
               modifyIORef nixCache (M.insert url (storePath, hash))
               return (storePath, hash)
 

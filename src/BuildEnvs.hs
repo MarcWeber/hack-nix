@@ -155,7 +155,7 @@ buildEnv envName nixEnvArgs = do
           cht <- asks createHaskellTags 
           let tagOptions = case cht of
                 TTNone -> ["         # no tags"]
-                TTVim  -> ["         createHaskellTagsFor = pkg.deps",
+                TTVim  -> ["         createHaskellTagsFor = pkg.propagatedHaskellDeps",
                            "                              ++ [ (" ++ haskellPackagesToUse ++ ".ghcPlain // { srcDir = \"libraries compiler/main\"; })",
                            "                                   (" ++ haskellPackagesToUse ++ ".ghcPlain // { srcDir = \"compiler/main\"; })",
                            "                                 ];"
