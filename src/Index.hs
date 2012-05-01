@@ -77,11 +77,11 @@ maxConc cfg = Map.fromList [
 
 
 -- determine list of packages to be installed based on TargetPackages setting
-filterTargetPackages :: TargetPackages Dependency -> Map.Map String [Dependency] -> [(String, Version, String)] -> [(String, Version, String)]
-filterTargetPackages targetPackages' preferred' packages' = do
+filterTargetPackages :: TargetPackages Dependency -> [String] -> Map.Map String [Dependency] -> [(String, Version, String)] -> [(String, Version, String)]
+filterTargetPackages targetPackages' ignore preferred' packages' = do
   let byName = Map.map sortByVersion $ Map.fromListWith (++) [ (name, [p]) | p@(name,_,_) <- packages' ]
   -- after grouping all packages by name only keep wanted packages
-  concatMap (filterByName targetPackages') $ Map.toList byName
+  filter (\(n,_,_) -> not (n `elem` ignore) ) $ concatMap (filterByName targetPackages') $ Map.toList byName
   where
     -- match packages which has been selected by the user explicitly 
     elected :: [Dependency] -> [ (String, Version, String) ] -> [(String, Version, String)]
@@ -106,7 +106,7 @@ dumpIndex :: BL.ByteString -> IO ()
 dumpIndex bs = Tar.foldEntries next (return ()) fail $ (Tar.read) $ decompress bs
   where
     next e a = a >> (putStrLn $ Tar.entryPath $ e)
-    fail s = putStrLn $ "tar error: " ++ s
+    fail s = putStrLn $ "tar error: " ++ show s
 
 
 
@@ -119,10 +119,10 @@ readIndexTask :: Config
                  -> FilePath
                  -> Task PTT [Char] ()
 readIndexTask cfg bs results tmpDir = Task PTTReadIndex "reading index" $ \newAction -> do
-  let tarErr err = unsafePerformIO (putStrLn ("err decoding tar :" ++ err) >> return [])
+  let tarErr err = unsafePerformIO (putStrLn ("err decoding tar :" ++ show err) >> return [])
   let tarEntries = (Tar.foldEntries (:) [] tarErr) $ Tar.read $ decompress bs
   let preferredVersionsFromTar = Map.empty -- TODO
-  let targetPackages' = (filterTargetPackages (targetPackages cfg) preferredVersionsFromTar) $ catMaybes $ map readEntry tarEntries
+  let targetPackages' = (filterTargetPackages (targetPackages cfg) (ignorePackages cfg) preferredVersionsFromTar) $ catMaybes $ map readEntry tarEntries
 
   let strToNix name s =
         -- TODO: make this strict so that the work is done in threads !?

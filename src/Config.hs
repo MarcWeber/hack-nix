@@ -45,6 +45,7 @@ data Config = Config
   , patchesDir :: [ FilePath ]
   , allPackages :: FilePath
   , targetPackages :: TargetPackages Dependency
+  , ignorePackages :: [ String ] --  list of package names (without version) - probably thish should be name and version
   , targetFile :: Maybe FilePath
   , testCabals :: [ FilePath ]
   , patchDirectory :: FilePath
@@ -63,7 +64,7 @@ configErr :: [Char] -> b
 configErr value = error $ "missing configuration file value: " ++ value
 emptyConfig :: Config
 emptyConfig = Config (configErr "hackage index file")
-                     [] [] "" (TPMostRecentPreferred [] "") Nothing [] "" "" "" [] TTNone 1 1 1
+                     [] [] "" (TPMostRecentPreferred [] "") [] Nothing [] "" "" "" [] TTNone 1 1 1
 
 defaultConfigContents :: String
 defaultConfigContents = unlines
@@ -72,6 +73,7 @@ defaultConfigContents = unlines
   , "patches-dir mypatchdir # can be given multiple times"
   , "all-packages.nix /etc/nixos/nixpkgs/pkgs/top-level/all-packages.nix"
   , "target-packages TPMostRecentPreferred [\"Cabal == 1.4.0.0\"] # additional list of non recent packages to be added"
+  , "ignore-packages [] # packages to ignore for whatever reason (eg because .cabal doesn't parse)"
   , "target-file Just \"result\" # where to write the result to. Addition"
   , "test-cabal-files [] # [\"tests/test.cabal\"] this will be added to the package db. used by test cases"
   , "patch-directory \"path-to-nix-haskell-repo/patches\" # Path to nix-haskell-repo/patches"
@@ -104,6 +106,7 @@ parseConfig config =
           | isPrefixOf "hackage-index" l = cfg { hackageIndex = read $ dropS (length "ghc-extra-libs") $ dropEOLComment l }
           | isPrefixOf "packages-dir " l = cfg { packagesDir = [dropS (length "packages-dir") $ dropEOLComment l] ++ (packagesDir cfg)  }
           | isPrefixOf "patches-dir " l = cfg { patchesDir = [dropS (length "packges-dir") $ dropEOLComment l] ++ (patchesDir cfg) }
+          | isPrefixOf "ignore-packages " l = cfg { ignorePackages = read $! dropS (length "ignore-packages") $! dropEOLComment l }
           | isPrefixOf "target-packages " l = cfg { targetPackages = parseTargetPackages $! read $! dropS (length "target-packages") $! dropEOLComment l }
           | isPrefixOf "target-file " l = cfg { targetFile = read $ dropS (length "target-file") $ dropEOLComment l }
           | isPrefixOf "test-cabal-files " l = cfg { testCabals = read $ dropS (length "test-cabal-files") $ dropEOLComment l }

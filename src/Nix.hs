@@ -88,7 +88,7 @@ downloadCached url forceStorePath = do
                                           [] -> last $ last asWords
               when (not $ (all (`elem` (['0'..'9'] ++ ['a'..'z'] ++ [ 'A'..'Z']))) hash) $ error $ "bad hash: " ++ hash ++ " words :" ++ (show asWords)
               modifyIORef nixCache (M.insert url (storePath, hash))
-              return (storePath, hash)
+              return (filter (not .(`elem` "’‘")) storePath, hash)
 
   case p of
     Just t@(p,_) -> do

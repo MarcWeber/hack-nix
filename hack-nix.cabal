@@ -12,8 +12,7 @@ description:
 
 executable hack-nix
 
-  build-depends:    haskell98
-                  , base
+  build-depends:  base
                   , directory
                   , containers
                   , network
