@@ -5,9 +5,9 @@
      cdeps = [];
      deps = 
      [
-       {n = "haskell98";}  {n = "base";}  {n = "directory";}
-       {n = "containers";}  {n = "network";}  {n = "zlib";}
-       {n = "tar";}  {n = "bytestring";}  {n = "filepath";}
+       {n = "base";}  {n = "directory";}  {n = "containers";}
+       {n = "network";}  {n = "zlib";}  {n = "tar";}
+       {n = "bytestring";}  {n = "filepath";}
        {gte = "1.8.0.6";  n = "Cabal";}  {n = "process";}  {n = "mtl";}
        {n = "pretty";}
        {i1 = {gte = "2";};  i2 = {lt = "5";};  n = "base";}
@@ -15,7 +15,7 @@
        {n = "unix";}
      ];
    }];
-  sha256 = "0nlmyvjv8nydaghhzjj93pnz70gdcracvq5224f8zkgwg2z84lqp";
+  sha256 = "03dn47wg65qrkpd3h6vnfkpzs7sl8psvys8ahclr3d2rd27l5c5k";
   tsdeps = [];
   url = "file:///pr/haskell/hack-nix/dist/hack-nix-0.1.1.tar.gz";
 }

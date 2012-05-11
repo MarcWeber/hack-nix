@@ -56,7 +56,7 @@ runWithConfig tmpDir cfg args =  do
       ["--unpack", fullName] -> unpackPackage fullName
       ["--create-patch", fullName] -> createPatch fullName
       ["--patch-workflow", fullName] -> patchWorkflow fullName (updateHackageIndexFile tmpDir)
-      ["--to-nix"] -> packageToNix >> return ()
+      ["--to-nix"] -> packageToNix True >> return ()
       ["--write-hack-nix-cabal-config"] -> writeHackNixCabalConfig
       ("--build-env":args') -> buildEnv "default" args' -- assume default
       ("--build-env-name": name: args') -> buildEnv name args'

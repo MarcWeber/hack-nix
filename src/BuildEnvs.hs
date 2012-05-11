@@ -57,36 +57,39 @@ writeHackNixCabalConfig = do
 
 -- runs ./[Ss]etup dist
 -- and creates dist/name.nix 
-packageToNix :: ConfigR FilePath
-packageToNix = do
+packageToNix :: Bool -> ConfigR FilePath
+packageToNix runDist = do
   pd <- parseCabalFileCurrentDir
   setupE <- liftIO $ findSetup
   (_, outH, _, p) <- liftIO $ runInteractiveProcess ("./"++setupE) ["sdist"] Nothing Nothing
   e <- liftIO $ liftM lines $ hGetContents outH
   ec <- liftIO $ waitForProcess p
-  srcDistfile <- case ec of
-    ExitFailure (ec') -> do
-      liftIO $ hPutStrLn stderr $ "./[sS]etup sdist failed with exit code " ++ (show ec')
-      -- should fail. This hack exists only becauese of Yi.
-      cwd <- liftIO $ getCurrentDirectory
-      let f = cwd </> "dist/failure.txt" 
-      liftIO $ writeFile f "failed creating dist tar using ./Setup sdist"
-      return f
-    ExitSuccess -> do
-      let pref = "Source tarball created:"
-      let distFile = case filter (pref `isPrefixOf`) e of
-            [] -> error "expected cabal outputting line starting with \"" ++ pref ++ "\""
-            x':xs' -> case drop (length pref) x' of
-                       -- dist file next line
-                       "" -> -- dist file next line
-                             head . drop 1 $ xs'
-                       (' ':xs'') -> xs''
-                       _ -> error "unexpected in BuildEnvs"
-      pwd <- liftIO $ getCurrentDirectory
-      return $ pwd ++ "/" ++ distFile
+  st <- if not runDist then return STNone
+        else do
+          srcDistfile <- case ec of
+            ExitFailure (ec') -> do
+              liftIO $ hPutStrLn stderr $ "./[sS]etup sdist failed with exit code " ++ (show ec')
+              -- should fail. This hack exists only becauese of Yi.
+              cwd <- liftIO $ getCurrentDirectory
+              let f = cwd </> "dist/failure.txt" 
+              liftIO $ writeFile f "failed creating dist tar using ./Setup sdist"
+              return f
+            ExitSuccess -> do
+              let pref = "Source tarball created:"
+              let distFile = case filter (pref `isPrefixOf`) e of
+                    [] -> error "expected cabal outputting line starting with \"" ++ pref ++ "\""
+                    x':xs' -> case drop (length pref) x' of
+                               -- dist file next line
+                               "" -> -- dist file next line
+                                     head . drop 1 $ xs'
+                               (' ':xs'') -> xs''
+                               _ -> error "unexpected in BuildEnvs"
+              pwd <- liftIO $ getCurrentDirectory
+              return $ pwd ++ "/" ++ distFile
+          return (STFetchUrl ("file://"++srcDistfile) (error "unsued"))
 
   -- TODO refactor. Add createFetchUrl src func or such 
-  nixT <- liftIO $ packageDescriptionToNix (STFetchUrl ("file://"++srcDistfile) (error "unsued")) $ pd
+  nixT <- liftIO $ packageDescriptionToNix st $ pd
   let pD = packageDescription $ pd
   let (PackageIdentifier (PackageName name) _) = package pD
   let nixFile = "dist/" ++ name ++ ".nix"
@@ -126,8 +129,8 @@ buildEnv envName nixEnvArgs = do
         Left s -> liftIO $ die $ "can't read config line: " ++ h ++ " result : " ++ show s
         Right (envName', getOpt, flags, flagsStr') -> do
 
-          -- build dist file more important write .cabal file in a nix readable format: 
-          thisPkgNixFile <- packageToNix
+          -- write .cabal file in a nix readable format: 
+          thisPkgNixFile <- packageToNix False
 
           let nixFilesDir = (hackNixEnvs </> "nix")
               nixFile = nixFilesDir </> envName' ++ ".nix"
