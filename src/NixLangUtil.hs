@@ -201,7 +201,7 @@ packageDescriptionToNix st (GenericPackageDescription packageDescription' genPac
           (_, hash) <- downloadCached url False
           return [("sha256", NixString hash), ("url", NixString url)]
 
-        STNone -> return []
+        STNone -> return [("srcFile", NixNull)]
 
   return $ NixAttrs ["name", "version"] $ M.fromList $ [
         ("name", NixString name)

@@ -70,6 +70,8 @@ downloadCached url forceStorePath = do
   let retrieve = do 
         putStr $ "retrieving " ++ url ++ " using nix-prefetch-url ..  \n\n"
         (inH, outH, errH, p) <- runInteractiveProcess "nix-prefetch-url" [url] Nothing Nothing
+        hSetEncoding errH utf8
+        hSetEncoding outH utf8
         e <- hGetContents errH
         out <- hGetContents outH
         -- bad: force reading:
@@ -87,8 +89,11 @@ downloadCached url forceStorePath = do
                                           [x] -> x
                                           [] -> last $ last asWords
               when (not $ (all (`elem` (['0'..'9'] ++ ['a'..'z'] ++ [ 'A'..'Z']))) hash) $ error $ "bad hash: " ++ hash ++ " words :" ++ (show asWords)
-              modifyIORef nixCache (M.insert url (storePath, hash))
-              return (filter (not .(`elem` "’‘")) storePath, hash)
+              let tidy = filter (not .(`elem` "’‘\8216\8217"))
+              let hash' =  tidy hash
+              let storePath' = tidy storePath
+              modifyIORef nixCache (M.insert url (storePath', hash'))
+              return (storePath', hash')
 
   case p of
     Just t@(p,_) -> do

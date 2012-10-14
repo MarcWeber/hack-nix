@@ -142,6 +142,7 @@ main = (flip finally) saveNixCache $ do
 help :: IO ()
 help = do
     dcp <- defaultConfigPath
+    hSetEncoding stdout utf8
     progName <- getProgName
     putStrLn $ unlines $ map ("  " ++ ) $
           [ progName ++ ": get index from hackage making its contents readable by nix"
