@@ -159,7 +159,7 @@ readIndexTask cfg bs results tmpDir = Task PTTReadIndex "reading index" $ \newAc
       readEntry e = case splitDirectories (Tar.entryPath e) of
                       [ "preferred-versions" ] -> Nothing -- TODO add these?
                       [ name, version, _ ] ->
-                        let v = fromMaybe (error $ "error parsing version: " ++ version) $ simpleParse version
+                        let v = fromMaybe (error $ "error parsing version: " ++ version ++ " of package " ++ name) $ simpleParse version
                         in if Set.member (name, version) faultyPackages
                               then Nothing
                               else Just (name, v, BL.unpack $ cont (Tar.entryPath e) $ Tar.entryContent e)

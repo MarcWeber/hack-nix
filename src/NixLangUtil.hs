@@ -24,6 +24,14 @@ instance TypeToNix Flag where
     ]
 -}
 
+class GetBuildInfo a where
+  getBuildInfo :: a -> BuildInfo
+
+instance GetBuildInfo Executable where getBuildInfo = buildInfo
+instance GetBuildInfo Library where getBuildInfo = libBuildInfo
+instance GetBuildInfo Benchmark where getBuildInfo = benchmarkBuildInfo
+instance GetBuildInfo TestSuite where getBuildInfo = testBuildInfo
+
 instance TypeToNix OS where
   toNix Linux = NixString "Linux"
   toNix Windows = NixString "Windows"
@@ -126,13 +134,14 @@ instance (TypeToNix a, TypeToNix b, TypeToNix c) => TypeToNix (a,b,Maybe c) wher
       Just x -> [ toNix x ]
       _ -> []
 
-instance ( TypeToNix v, TypeToNix c, TypeToNix a
+instance ( TypeToNix v, TypeToNix c, GetBuildInfo a
          , TypeToNix (Condition v, CondTree v c a, Maybe (CondTree v c a)) )
      => (TypeToNix (CondTree v c a)) where
   toNix (CondNode d c components) = NixAttrs [] $ M.fromList $ [
       -- ("data", toNix d) this only contains stuff such as "exposed modules.." we're not interested in
         ("deps", toNix c) -- deps = constraints. That's shorter 
       , ("cdeps", toNix components) -- (i) cdeps = "conditional deps" - this is shorter 
+      , ("tools", (toNix . buildTools . getBuildInfo) d)
     ]
 
 -- returns
@@ -155,6 +164,12 @@ instance TypeToNix TestSuite where
             ("testName", NixString (testName ts))
           , ("testEnabled", NixBool (testEnabled ts))
           , ("testBuildable", NixBool ((buildable . testBuildInfo) ts)) 
+          ]
+
+instance TypeToNix Benchmark where
+  toNix ts = NixAttrs [] $ M.fromList [
+            ("bName", NixString (benchmarkName ts))
+          , ("bBuildable", NixBool ((buildable . benchmarkBuildInfo) ts)) 
           ]
 
 -- special instance for flag names 
@@ -183,7 +198,7 @@ data SourceType =
   | STFetchUrl FilePath String -- file:// uri and sha256
   | STNone -- for testing only 
 
-packageDescriptionToNix st (GenericPackageDescription packageDescription' genPackageFlags' condLibrary' condExecutables' condTestSuites') = do
+packageDescriptionToNix st (GenericPackageDescription packageDescription' genPackageFlags' condLibrary' condExecutables' condTestSuites' condBenchmarks') = do
   let PackageIdentifier (PackageName name) version = package packageDescription'
   let versionNumbers = versionBranch version
   let versionStr = intercalate "." (map show versionNumbers)
@@ -223,4 +238,6 @@ packageDescriptionToNix st (GenericPackageDescription packageDescription' genPac
       -- dependencies of executables
       ++ [("edeps", (toNix . map snd) condExecutables')]
 
+      -- dependencies of test suites
       ++ [("tsdeps", (toNix . map snd) condTestSuites')]
+      ++ [("bench_deps", (toNix . map snd) condBenchmarks')]
