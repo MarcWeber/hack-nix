@@ -29,7 +29,6 @@ class GetBuildInfo a where
 
 instance GetBuildInfo Executable where getBuildInfo = buildInfo
 instance GetBuildInfo Library where getBuildInfo = libBuildInfo
-instance GetBuildInfo Benchmark where getBuildInfo = benchmarkBuildInfo
 instance GetBuildInfo TestSuite where getBuildInfo = testBuildInfo
 
 instance TypeToNix OS where
@@ -43,6 +42,8 @@ instance TypeToNix OS where
   toNix AIX = NixString "AIX"
   toNix HPUX = NixString "HPUX"
   toNix IRIX= NixString "IRIX"
+  toNix IOS = NixString "IOS"
+  toNix HaLVM = NixString "HaLVM"
   toNix (OtherOS s) = NixString $ "other:" ++ s
 
 instance TypeToNix CompilerFlavor where
@@ -52,8 +53,11 @@ instance TypeToNix CompilerFlavor where
   toNix Hugs = NixString "Hugs"
   toNix HBC = NixString "HBC"
   toNix Helium = NixString "Helium"
-  toNix JHC= NixString "JHC"
+  toNix JHC = NixString "JHC"
+  toNix LHC = NixString "LHC"
+  toNix UHC = NixString "UHC"
   toNix (OtherCompiler o) = NixString $ "other:" ++ o
+
 
 instance TypeToNix Arch where
   toNix I386   = NixString "I386"
@@ -166,12 +170,6 @@ instance TypeToNix TestSuite where
           , ("testBuildable", NixBool ((buildable . testBuildInfo) ts)) 
           ]
 
-instance TypeToNix Benchmark where
-  toNix ts = NixAttrs [] $ M.fromList [
-            ("bName", NixString (benchmarkName ts))
-          , ("bBuildable", NixBool ((buildable . benchmarkBuildInfo) ts)) 
-          ]
-
 -- special instance for flag names 
 instance TypeToNix (Condition String) where
   -- strip this "var" to save some bytes, the "os", "arch", "flag", "compilerFlavor" names are uniq enough
@@ -240,4 +238,4 @@ packageDescriptionToNix st (GenericPackageDescription packageDescription' genPac
 
       -- dependencies of test suites
       ++ [("tsdeps", (toNix . map snd) condTestSuites')]
-      ++ [("bench_deps", (toNix . map snd) condBenchmarks')]
+      -- ++ [("bench_deps", (toNix . map snd) condBenchmarks')]

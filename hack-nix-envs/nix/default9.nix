@@ -1,11 +1,8 @@
-{
-  name = "hack-nix";  version="99999";
+{ name = "hack-nix";  version="99999";  bench_deps = [];
   edeps = 
-  [{
-     cdeps = [];
+  [{ cdeps = [];
      deps = 
-     [
-       {n = "base";}  {n = "directory";}  {n = "containers";}
+     [ {n = "base";}  {n = "directory";}  {n = "containers";}
        {n = "network";}  {n = "zlib";}  {n = "tar";}
        {n = "bytestring";}  {n = "filepath";}
        {gte = "1.8.0.6";  n = "Cabal";}  {n = "process";}  {n = "mtl";}
@@ -14,8 +11,7 @@
        {gte = "1.0";  n = "filepath";}  {n = "mtl";}  {n = "interlude";}
        {n = "unix";}
      ];
+     tools = [];
    }];
-  sha256 = "03dn47wg65qrkpd3h6vnfkpzs7sl8psvys8ahclr3d2rd27l5c5k";
-  tsdeps = [];
-  url = "file:///pr/haskell/hack-nix/dist/hack-nix-0.1.1.tar.gz";
+  srcFile = null;  tsdeps = [];
 }
